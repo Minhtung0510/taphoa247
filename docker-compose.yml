@@ -1,0 +1,124 @@
+services:
+  # 1. Cơ sở dữ liệu MySQL 8.0
+  mysql:
+    image: mysql:8.0
+    container_name: dtff_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${DB_DATABASE:-dtffshop}
+      MYSQL_USER: ${DB_USERNAME:-dtff_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-dtff_secret_password}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret_password}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - dtff_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 2. Redis Cache & Queue Broker
+  redis:
+    image: redis:alpine
+    container_name: dtff_redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - dtff_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 3. Backend Laravel 11 API (PHP 8.3-FPM + Supervisor Worker + Scheduler)
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: dtff_backend
+    restart: unless-stopped
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: ${APP_URL:-http://localhost}
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: ${DB_DATABASE:-dtffshop}
+      DB_USERNAME: ${DB_USERNAME:-dtff_user}
+      DB_PASSWORD: ${DB_PASSWORD:-dtff_secret_password}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      QUEUE_CONNECTION: redis
+      CACHE_STORE: redis
+      SESSION_DRIVER: redis
+      BANK_CODE: ${BANK_CODE:-MB}
+      ACCOUNT_NO: ${ACCOUNT_NO:-0987654321}
+      ACCOUNT_NAME: ${ACCOUNT_NAME:-"NGUYEN VAN MINH TUNG"}
+      WEB2M_TOKEN: ${WEB2M_TOKEN:-""}
+      WEB2M_PASSWORD: ${WEB2M_PASSWORD:-""}
+      PAYMENT_TEST_MODE: ${PAYMENT_TEST_MODE:-false}
+    volumes:
+      - backend_storage:/var/www/backend/storage
+      - ./backend/database/seeders:/var/www/backend/database/seeders
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - dtff_network
+
+  # 4. Frontend Next.js 16 (App Router SSR/ISR)
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: dtff_frontend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost/api/v1}
+    depends_on:
+      - backend
+    networks:
+      - dtff_network
+
+  # 5. Reverse Proxy Nginx
+  nginx:
+    image: nginx:alpine
+    container_name: dtff_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./docker/nginx/conf.d:/etc/nginx/conf.d
+      - ./backend/public:/var/www/backend/public
+      - backend_storage:/var/www/backend/storage
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - dtff_network
+
+networks:
+  dtff_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_storage:
+    driver: local

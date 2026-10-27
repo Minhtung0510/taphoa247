@@ -9,6 +9,7 @@ use App\Services\OrderService;
 use App\Services\Web2MService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CheckoutController extends Controller
