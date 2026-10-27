@@ -137,7 +137,7 @@ function CheckoutContent() {
           Thanh Toán Đơn Hàng Tự Động 24/7
         </h1>
         <p className="text-sm text-slate-400 mt-1">
-          Hệ thống VietQR MBBank tự động nhận diện giao dịch và bàn giao acc sau 3 giây.
+          Hệ thống VietQR tự động nhận diện giao dịch và bàn giao acc sau 3 giây.
         </p>
       </div>
 
@@ -269,11 +269,11 @@ function CheckoutContent() {
             <div className="flex flex-col items-center p-4 bg-white rounded-xl shadow-inner">
               <img
                 src={order.qr_url}
-                alt="VietQR MBBank"
+                alt="VietQR Chuyển Khoản"
                 className="w-64 h-64 object-contain"
               />
               <span className="text-[11px] text-slate-600 mt-2 font-mono font-bold">
-                Quét bằng app ngân hàng bất kỳ
+                Quét bằng app TPBank hoặc app ngân hàng bất kỳ
               </span>
             </div>
 
@@ -282,7 +282,13 @@ function CheckoutContent() {
               <div className="p-3 bg-slate-950 rounded-xl border border-slate-800 flex justify-between items-center">
                 <div>
                   <span className="text-slate-400 block text-[10px]">NGÂN HÀNG</span>
-                  <b className="text-white text-sm">{order.bank_code} (MBBank)</b>
+                  <b className="text-white text-sm">
+                    {order.bank_code === 'TPB' || order.bank_code === 'TPBANK'
+                      ? 'TPBank (Ngân Hàng Tiên Phong)'
+                      : order.bank_code === 'MB' || order.bank_code === 'MBB'
+                      ? 'MBBank (Quân Đội)'
+                      : order.bank_code || 'Ngân Hàng'}
+                  </b>
                 </div>
               </div>
 

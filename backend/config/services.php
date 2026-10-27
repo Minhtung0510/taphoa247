@@ -31,4 +31,12 @@ return [
         ],
     ],
 
+    'web2m' => [
+        'bank_code' => env('BANK_CODE', 'TPB'),
+        'account_no' => env('ACCOUNT_NO', ''),
+        'account_name' => env('ACCOUNT_NAME', ''),
+        'password' => env('WEB2M_PASSWORD'),
+        'token' => env('WEB2M_TOKEN'),
+    ],
+
 ];

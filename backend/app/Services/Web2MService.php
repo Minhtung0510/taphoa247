@@ -17,7 +17,7 @@ class Web2MService
 
     public function __construct()
     {
-        $this->bankCode = config('services.web2m.bank_code', env('BANK_CODE', 'MBB'));
+        $this->bankCode = strtoupper(config('services.web2m.bank_code', env('BANK_CODE', 'TPB')));
         $this->accountNo = config('services.web2m.account_no', env('ACCOUNT_NO', ''));
         $this->accountName = config('services.web2m.account_name', env('ACCOUNT_NAME', ''));
         $this->password = config('services.web2m.password', env('WEB2M_PASSWORD'));
@@ -30,9 +30,18 @@ class Web2MService
         return $this->testMode;
     }
 
+    public function getBankCode(): string
+    {
+        return $this->bankCode;
+    }
+
     public function generateQrUrl(int $amount, string $memo): string
     {
-        $bank = strtoupper($this->bankCode ?: 'MBB');
+        $bank = strtoupper($this->bankCode ?: 'TPB');
+        // Chuẩn hóa mã ngân hàng cho VietQR (TPBANK -> TPB)
+        if ($bank === 'TPBANK') {
+            $bank = 'TPB';
+        }
         $acc = $this->accountNo ?: '0000000000';
         $nameEnc = rawurlencode($this->accountName ?: 'DTFF SHOP');
         $cleanMemo = rawurlencode($memo);
@@ -51,14 +60,33 @@ class Web2MService
             return null;
         }
 
-        $url = "https://api.web2m.com/historyapimb/{$this->password}/{$this->accountNo}/{$this->token}";
+        $bank = strtolower($this->bankCode);
+        $endpoint = match ($bank) {
+            'tpb', 'tpbank' => 'historyapitpbank',
+            'vcb', 'vietcombank' => 'historyapivcb',
+            'acb' => 'historyapiacb',
+            'icb', 'ctg', 'vietinbank' => 'historyapivietinbank',
+            default => 'historyapimb',
+        };
+
+        $url = "https://api.web2m.com/{$endpoint}/{$this->password}/{$this->accountNo}/{$this->token}";
 
         try {
             $response = Http::timeout(15)->get($url);
             if ($response->successful()) {
                 return $response->json();
             }
-            Log::error('[Web2M] Lỗi gọi API lịch sử: ' . $response->status());
+
+            // Fallback dự phòng cho TPBank nếu Web2M cấu hình historyapitpb
+            if (($bank === 'tpb' || $bank === 'tpbank') && $response->status() === 404) {
+                $fallbackUrl = "https://api.web2m.com/historyapitpb/{$this->password}/{$this->accountNo}/{$this->token}";
+                $fallbackRes = Http::timeout(15)->get($fallbackUrl);
+                if ($fallbackRes->successful()) {
+                    return $fallbackRes->json();
+                }
+            }
+
+            Log::error("[Web2M] Lỗi gọi API lịch sử ({$endpoint}): " . $response->status());
         } catch (\Throwable $e) {
             Log::error('[Web2M] Ngoại lệ khi gọi Web2M: ' . $e->getMessage());
         }

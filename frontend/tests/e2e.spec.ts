@@ -106,7 +106,7 @@ test.describe('E-Commerce Gaming Account Website Test Suite', () => {
     await submitBtn.click();
 
     // Chờ đơn hàng được tạo và hiển thị QR
-    const qrImage = page.locator('img[alt="VietQR MBBank"]');
+    const qrImage = page.locator('img[alt*="VietQR"]');
     await expect(qrImage).toBeVisible({ timeout: 15000 });
 
     // Kiểm tra hiển thị memo thanh toán
