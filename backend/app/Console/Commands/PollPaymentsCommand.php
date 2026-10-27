@@ -2,17 +2,17 @@
 
 namespace App\Console\Commands;
 
+use App\Contracts\PaymentGatewayInterface;
 use App\Models\Order;
 use App\Services\OrderService;
-use App\Services\Web2MService;
 use Illuminate\Console\Command;
 
 class PollPaymentsCommand extends Command
 {
     protected $signature = 'payments:poll';
-    protected $description = 'Kiểm tra biến động số dư ngân hàng MBBank qua Web2M để tự động giao acc cho các đơn hàng';
+    protected $description = 'Kiểm tra biến động số dư ngân hàng qua SePay / Web2M để tự động giao acc cho các đơn hàng';
 
-    public function handle(Web2MService $web2m, OrderService $orderService): int
+    public function handle(PaymentGatewayInterface $gateway, OrderService $orderService): int
     {
         // 1. Tự động nhả các đơn hàng quá hạn 30 phút
         $released = $orderService->releaseExpiredOrders();
@@ -39,12 +39,12 @@ class PollPaymentsCommand extends Command
 
         $this->line("Đang kiểm tra " . $pendingOrders->count() . " đơn hàng chờ thanh toán...");
 
-        // Gọi Web2M đúng 1 lần cho tất cả đơn
-        $history = $web2m->fetchHistory();
+        // Gọi Gateway đúng 1 lần cho tất cả đơn
+        $history = $gateway->fetchHistory();
 
         $fulfilled = 0;
         foreach ($pendingOrders as $order) {
-            $matchedTx = $web2m->findMatchingTransaction($order, $history);
+            $matchedTx = $gateway->findMatchingTransaction($order, $history);
             if ($matchedTx) {
                 $this->info("⚡ Đã khớp thanh toán cho đơn {$order->order_code} (Số tiền: {$order->total_amount}đ)");
                 $orderService->fulfillOrder($order, $matchedTx);

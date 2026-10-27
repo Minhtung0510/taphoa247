@@ -2,11 +2,12 @@
 
 namespace App\Services;
 
+use App\Contracts\PaymentGatewayInterface;
 use App\Models\Order;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
-class Web2MService
+class Web2MService implements PaymentGatewayInterface
 {
     protected string $bankCode;
     protected string $accountNo;
@@ -96,7 +97,7 @@ class Web2MService
 
     public function findMatchingTransaction(Order $order, ?array $history = null): ?array
     {
-        if ($this->testMode) {
+        if ($this->testMode && $history === null) {
             return [
                 'transactionID' => 'TEST-' . uniqid(),
                 'creditAmount' => $order->total_amount,

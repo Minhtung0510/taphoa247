@@ -54,3 +54,14 @@ Tài liệu này ghi lại toàn bộ các quyết định kỹ thuật tự ch�
   2. Dùng cơ chế **ISR (Incremental Static Regeneration)** với thời gian revalidate hợp lý (60 giây) kết hợp tag-based revalidation (`revalidateTag`) khi kho hàng hoặc giá thay đổi.
   3. Trang Checkout và Check Acc sử dụng Client Components cho phần đếm ngược thời gian và tương tác sao chép nhanh, nhưng dữ liệu khung ban đầu vẫn được nạp qua SSR.
   4. Giao diện Dark Gaming cao cấp (tông màu đen obsidian, xám than chì, điểm nhấn xanh ngọc neon/vàng kim) phù hợp với người chơi game Valorant, CS2, Steam.
+
+---
+
+### DECISION 07: TÍCH HỢP SEPAY POLLING API CHO TPBANK (KHÔNG CẦN DOMAIN)
+* **Bối cảnh**: TPBank thắt chặt cơ chế bảo mật (Smart OTP/device binding) khiến Web2M không thể duy trì cào dữ liệu TPBank. Đồng thời người dùng chưa mua domain công khai.
+* **Quyết định**:
+  1. Xây dựng interface chuẩn `PaymentGatewayInterface` cho phép hoán đổi linh hoạt giữa các cổng (`PAYMENT_GATEWAY=sepay` hoặc `web2m`).
+  2. Triển khai `SePayService` áp dụng **Cơ chế Polling API (Cách 1)** qua endpoint `GET https://my.sepay.vn/userapi/transactions/list` với Header `Authorization: Apikey <SEPAY_API_KEY>`.
+  3. Cơ chế Polling cho phép hệ thống chạy ở bất kỳ đâu (localhost, máy tính cá nhân, VPS không có domain) mà không cần mở port hay nhận inbound webhook.
+  4. Chuẩn hóa link VietQR qua SePay Image API (`https://qr.sepay.vn/img?bank=TPB...`) tự động nhận diện app TPBank trên điện thoại của khách hàng.
+

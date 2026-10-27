@@ -11,7 +11,13 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->bind(\App\Contracts\PaymentGatewayInterface::class, function () {
+            $gateway = strtolower((string) env('PAYMENT_GATEWAY', 'sepay'));
+            return match ($gateway) {
+                'web2m' => app(\App\Services\Web2MService::class),
+                default => app(\App\Services\SePayService::class),
+            };
+        });
     }
 
     /**

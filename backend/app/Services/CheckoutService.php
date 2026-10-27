@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Contracts\PaymentGatewayInterface;
 use App\Models\AccountStock;
 use App\Models\Order;
 use App\Models\OrderItem;
@@ -13,7 +14,7 @@ use InvalidArgumentException;
 class CheckoutService
 {
     public function __construct(
-        protected Web2MService $web2mService
+        protected PaymentGatewayInterface $paymentGateway
     ) {}
 
     /**
@@ -52,7 +53,7 @@ class CheckoutService
             $ttlSeconds = (int) env('PENDING_TTL_SECONDS', 1800);
             $expiresAt = now()->addSeconds($ttlSeconds);
 
-            $qrUrl = $this->web2mService->generateQrUrl($totalAmount, $memo);
+            $qrUrl = $this->paymentGateway->generateQrUrl($totalAmount, $memo);
 
             $order = Order::create([
                 'order_code' => $orderCode,
@@ -63,7 +64,7 @@ class CheckoutService
                 'memo' => $memo,
                 'total_amount' => $totalAmount,
                 'status' => 'pending',
-                'payment_gateway' => 'web2m',
+                'payment_gateway' => strtolower((string) env('PAYMENT_GATEWAY', 'sepay')),
                 'qr_url' => $qrUrl,
                 'delivery_format' => $quantity > 5 ? 'txt_file' : 'inline',
                 'expires_at' => $expiresAt,

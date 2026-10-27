@@ -2,11 +2,11 @@
 
 namespace App\Http\Controllers\Api;
 
+use App\Contracts\PaymentGatewayInterface;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Services\CheckoutService;
 use App\Services\OrderService;
-use App\Services\Web2MService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -17,7 +17,7 @@ class CheckoutController extends Controller
     public function __construct(
         protected CheckoutService $checkoutService,
         protected OrderService $orderService,
-        protected Web2MService $web2mService
+        protected PaymentGatewayInterface $paymentGateway
     ) {}
 
     /**
@@ -46,9 +46,9 @@ class CheckoutController extends Controller
                     'memo' => $order->memo,
                     'total_amount' => $order->total_amount,
                     'qr_url' => $order->qr_url,
-                    'bank_code' => config('services.web2m.bank_code', env('BANK_CODE', 'MBB')),
-                    'account_no' => config('services.web2m.account_no', env('ACCOUNT_NO', '')),
-                    'account_name' => config('services.web2m.account_name', env('ACCOUNT_NAME', 'DTFF SHOP')),
+                    'bank_code' => $this->paymentGateway->getBankCode(),
+                    'account_no' => env('ACCOUNT_NO', ''),
+                    'account_name' => env('ACCOUNT_NAME', 'DTFF SHOP'),
                     'expires_at' => $order->expires_at?->toIso8601String(),
                     'remaining_seconds' => max(0, now()->diffInSeconds($order->expires_at, false)),
                     'status' => $order->status,
@@ -136,7 +136,7 @@ class CheckoutController extends Controller
      */
     public function testPay(string $orderCode): JsonResponse
     {
-        if (!$this->web2mService->isTestMode()) {
+        if (!$this->paymentGateway->isTestMode()) {
             return response()->json([
                 'success' => false,
                 'message' => 'Chế độ test thanh toán không được kích hoạt.',

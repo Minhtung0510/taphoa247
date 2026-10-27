@@ -39,4 +39,11 @@ return [
         'token' => env('WEB2M_TOKEN'),
     ],
 
+    'sepay' => [
+        'api_key' => env('SEPAY_API_KEY'),
+        'bank_code' => env('BANK_CODE', 'TPB'),
+        'account_no' => env('ACCOUNT_NO', ''),
+        'account_name' => env('ACCOUNT_NAME', ''),
+    ],
+
 ];
