@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\AccountStock;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Services\DigishopResellerService;
@@ -197,6 +198,7 @@ class OrderService
         $count = 0;
         foreach ($expiredOrders as $order) {
             DB::transaction(function () use ($order, &$count) {
+                // 1. Giải phóng kho hàng đã giữ chỗ (Valorant stocks)
                 AccountStock::where('order_id', $order->id)
                     ->where('status', 'reserved')
                     ->update([
@@ -205,8 +207,19 @@ class OrderService
                         'reserved_at' => null,
                     ]);
 
+                // 2. Hoàn trả lượt sử dụng coupon (nếu đơn có áp mã giảm giá)
+                //    Dùng GREATEST(0, used_count - 1) để không bao giờ âm
+                if (!empty($order->coupon_code)) {
+                    Coupon::where('code', $order->coupon_code)
+                        ->where('used_count', '>', 0)
+                        ->decrement('used_count');
+                }
+
                 $order->update(['status' => 'timeout']);
                 $count++;
+
+                Log::info("[OrderService] Released expired order #{$order->order_code}" .
+                    (!empty($order->coupon_code) ? " (coupon {$order->coupon_code} refunded)" : ''));
             });
         }
 

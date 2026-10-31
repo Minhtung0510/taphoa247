@@ -91,6 +91,19 @@ class PreflightCheckCommand extends Command
             $errors[] = "ALLOW_MOCK_AUTH đang là true. Cần chuyển về false trên production.";
         }
 
+        // 12. ADMIN_INITIAL_PASSWORD
+        $adminPass = env('ADMIN_INITIAL_PASSWORD', '');
+        if (empty($adminPass)) {
+            $warnings[] = "ADMIN_INITIAL_PASSWORD chưa được đặt. Seeder AdminUserSeeder sẽ thất bại khi chạy.";
+        } elseif (strlen($adminPass) < 12) {
+            $errors[] = "ADMIN_INITIAL_PASSWORD quá ngắn (" . strlen($adminPass) . " ký tự). Yêu cầu tối thiểu 12 ký tự.";
+        }
+
+        // 13. SESSION_SECURE_COOKIE
+        if (!config('session.secure', false)) {
+            $errors[] = "SESSION_SECURE_COOKIE chưa bật (session.secure = false). Trên HTTPS production bắt buộc phải là true để chống Cookie Hijacking.";
+        }
+
         // Báo cáo kết quả
         if (!empty($errors)) {
             $this->newLine();
@@ -101,6 +114,15 @@ class PreflightCheckCommand extends Command
             $this->newLine();
             $this->warn("Vui lòng cập nhật file .env trên server trước khi đưa vào vận hành.");
             return Command::FAILURE;
+        }
+
+        // Hiển thị cảnh báo (không chặn khởi động)
+        if (!empty($warnings)) {
+            $this->newLine();
+            $this->warn("⚠️  Cảnh báo (" . count($warnings) . " điểm cần lưu ý):");
+            foreach ($warnings as $idx => $w) {
+                $this->line("  " . ($idx + 1) . ". {$w}");
+            }
         }
 
         $this->newLine();

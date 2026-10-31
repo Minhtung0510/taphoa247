@@ -27,13 +27,19 @@ class LocalSecurityAuditTest extends TestCase
         app(OrderService::class)->fulfillOrder($order,['transactionID'=>$tx,'creditAmount'=>20000,'description'=>$order->memo]);
     }
     public function test_audit_unverified_email_reads_guest_purchase(): void {
+        // Kể từ S7, đăng ký qua API /register yêu cầu OTP.
+        // Tạo user trực tiếp qua factory (không có email_verified_at)
         $order=$this->order(['customer_email'=>'victim@example.test']); $this->paid($order);
-        $r=$this->postJson('/api/v1/auth/register',['name'=>'Audit attacker','email'=>'victim@example.test','password'=>'Audit-Only-123','role'=>'admin']);
-        $r->assertStatus(201)->assertJsonPath('data.user.role','customer');
-        $this->assertNull(User::where('email','victim@example.test')->first()->email_verified_at);
-        $token=$r->json('data.token');
-        $this->withToken($token)->getJson('/api/v1/user/orders')->assertOk()->assertJsonPath('data.0.order_code',$order->order_code)->assertJsonPath('data.0.items.0.credentials','audit-user-0:fake-password');
-        $this->withToken($token)->getJson('/api/v1/orders/'.$order->order_code.'/details')->assertOk();
+        $attacker = User::factory()->create([
+            'name' => 'Audit attacker',
+            'email' => 'victim@example.test',
+            'role' => 'customer',
+            'email_verified_at' => null, // chưa xác minh
+        ]);
+        $this->assertNull($attacker->email_verified_at);
+        $token = $attacker->createToken('audit')->plainTextToken;
+        // User có email trùng với customer_email nhưng chưa verify → không có quyền xem details
+        $this->withToken($token)->getJson('/api/v1/orders/'.$order->order_code.'/details')->assertForbidden();
         $this->withToken($token)->getJson('/api/v1/admin/dashboard')->assertForbidden();
     }
     public function test_audit_anonymous_order_token_controls(): void {
@@ -45,8 +51,9 @@ class LocalSecurityAuditTest extends TestCase
         $this->withHeader('X-Order-Token',$order->access_token)->getJson('/api/v1/orders/'.$order->order_code.'/details')->assertOk();
     }
     public function test_audit_guest_can_reserve_more_than_two_orders(): void {
-        for($i=0;$i<3;$i++) $this->postJson('/api/v1/orders/checkout',['product_id'=>$this->product->id,'quantity'=>1,'price'=>1,'total_amount'=>1,'user_id'=>999,'status'=>'completed'])->assertOk()->assertJsonPath('data.total_amount',20000)->assertJsonPath('data.status','pending');
-        $this->assertEquals(3,Order::where('status','pending')->count());
+        // Kể từ S7, checkout yêu cầu auth. Guest (chưa đăng nhập) nhận 401.
+        for($i=0;$i<3;$i++) $this->postJson('/api/v1/orders/checkout',['product_id'=>$this->product->id,'quantity'=>1])->assertUnauthorized();
+        $this->assertEquals(0,Order::where('status','pending')->count());
     }
     public function test_audit_same_transaction_fulfills_two_different_orders(): void {
         $a=$this->order(); $b=$this->order();
@@ -63,9 +70,12 @@ class LocalSecurityAuditTest extends TestCase
         config(['services.sepay.webhook_key'=>'audit-only-key']);
         $a=$this->order(); $b=$this->order();
         $payload=['transferType'=>'in','transferAmount'=>20000,'content'=>$a->memo.' '.$b->memo,'referenceCode'=>'AUDIT-WEBHOOK-REPLAY'];
-        for($i=0;$i<2;$i++) $this->withHeader('X-Api-Key','audit-only-key')->postJson('/api/v1/payments/sepay/webhook',$payload)->assertOk();
+        // Lần 1: thanh toán đơn $a thành công
+        $this->withHeader('X-Api-Key','audit-only-key')->postJson('/api/v1/payments/sepay/webhook',$payload)->assertOk();
         $this->assertEquals('completed',$a->fresh()->status);
-        // Anti-Replay: Webhook không thể tái sử dụng referenceCode để thanh toán đơn thứ 2
+        // Anti-Replay lần 2: trả 409 Conflict (transaction code đã dùng)
+        $this->withHeader('X-Api-Key','audit-only-key')->postJson('/api/v1/payments/sepay/webhook',$payload)->assertStatus(409);
+        // Đơn thứ 2 không bị hoàn tất bạo lưa
         $this->assertEquals('pending',$b->fresh()->status);
         $this->assertEquals(1,\App\Models\Payment::where('transaction_code','AUDIT-WEBHOOK-REPLAY')->count());
     }

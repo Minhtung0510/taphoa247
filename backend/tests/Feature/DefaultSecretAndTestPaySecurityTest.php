@@ -80,4 +80,19 @@ class DefaultSecretAndTestPaySecurityTest extends TestCase
         $this->assertEquals(1, $exitCode);
         $this->assertStringContainsString('DEVICE_GATEWAY_SECRET', $output);
     }
+
+    public function test_preflight_fails_when_admin_password_too_short(): void
+    {
+        // Đặt ADMIN_INITIAL_PASSWORD ngắn → preflight phải báo lỗi về nó
+        // (Các check khác như APP_ENV, SQLite cũng có thể fail, nhưng ta chỉ quan tâm output chứa chuỗi này)
+        putenv('ADMIN_INITIAL_PASSWORD=short');
+
+        $exitCode = Artisan::call('app:preflight');
+        $output   = Artisan::output();
+
+        // preflight phải thất bại (exit 1) vì có ít nhất 1 lỗi
+        $this->assertEquals(1, $exitCode);
+        // Output phải đề cập đến ADMIN_INITIAL_PASSWORD
+        $this->assertStringContainsString('ADMIN_INITIAL_PASSWORD', $output);
+    }
 }

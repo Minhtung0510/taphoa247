@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\AccountStock;
 use App\Models\Category;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\OrderItem;
 use App\Models\Product;
@@ -486,6 +487,13 @@ class AdminController extends Controller
                 'order_id' => null,
                 'reserved_at' => null,
             ]);
+
+        // Hoàn trả lượt sử dụng coupon nếu đơn có áp mã giảm giá
+        if (!empty($order->coupon_code)) {
+            Coupon::where('code', $order->coupon_code)
+                ->where('used_count', '>', 0)
+                ->decrement('used_count');
+        }
 
         // Cập nhật trạng thái đơn thành cancelled
         $order->status = 'cancelled';

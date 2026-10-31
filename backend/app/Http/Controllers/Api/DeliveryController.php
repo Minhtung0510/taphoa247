@@ -422,8 +422,18 @@ class DeliveryController extends Controller
 HTML;
 
         return response($html, 200, [
-            'Content-Type' => 'text/html; charset=utf-8',
-            'Content-Disposition' => "attachment; filename=\"TapHoa247_KhoAcc_{$order->order_code}.html\"",
+            'Content-Type'              => 'text/html; charset=utf-8',
+            'Content-Disposition'       => "attachment; filename=\"TapHoa247_KhoAcc_{$order->order_code}.html\"",
+            'X-Content-Type-Options'    => 'nosniff',
+            'X-Frame-Options'           => 'DENY',
+            'Content-Security-Policy'   =>
+                "default-src 'none'; " .
+                "script-src 'self' https://cdn.tailwindcss.com 'unsafe-inline'; " .
+                "style-src 'self' 'unsafe-inline'; " .
+                "img-src 'self' https://media.valorant-api.com data:; " .
+                "font-src 'self'; " .
+                "connect-src 'none'; " .
+                "frame-ancestors 'none';",
         ]);
     }
 

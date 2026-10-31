@@ -28,32 +28,27 @@ class AuthAndSecurityTest extends TestCase
 
     public function test_traditional_register_and_login()
     {
-        // 1. Register
-        $resReg = $this->postJson('/api/v1/auth/register', [
-            'name' => 'Nguyễn Văn Test',
-            'email' => 'testuser@dtffshop.com',
-            'password' => 'secret123',
+        // Kể từ S7, đăng ký qua API /register yêu cầu OTP.
+        // Test này xác nhận login flow: tạo user trực tiếp (seeder/factory) rồi test login.
+        $user = \App\Models\User::factory()->create([
+            'email'    => 'testuser@dtffshop.com',
+            'password' => bcrypt('Secret123!'),
+            'role'     => 'customer',
         ]);
 
-        $resReg->assertStatus(201);
-        $resReg->assertJsonPath('success', true);
-        $this->assertNotEmpty($resReg->json('data.token'));
-        $this->assertEquals('testuser@dtffshop.com', $resReg->json('data.user.email'));
-
-        // 2. Login with correct password
+        // 1. Login với đúng mật khẩu
         $resLogin = $this->postJson('/api/v1/auth/login', [
-            'email' => 'testuser@dtffshop.com',
-            'password' => 'secret123',
+            'email'    => 'testuser@dtffshop.com',
+            'password' => 'Secret123!',
         ]);
-
         $resLogin->assertStatus(200);
         $resLogin->assertJsonPath('success', true);
         $token = $resLogin->json('data.token');
         $this->assertNotEmpty($token);
 
-        // 3. Login with wrong password
+        // 2. Login với sai mật khẩu
         $resBad = $this->postJson('/api/v1/auth/login', [
-            'email' => 'testuser@dtffshop.com',
+            'email'    => 'testuser@dtffshop.com',
             'password' => 'wrongpass',
         ]);
         $resBad->assertStatus(401);
