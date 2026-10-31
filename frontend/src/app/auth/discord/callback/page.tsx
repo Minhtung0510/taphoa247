@@ -20,7 +20,7 @@ function DiscordCallbackContent() {
   useEffect(() => {
     // Nếu user đã đăng nhập thành công thì chuyển hướng ngay
     if (user) {
-      router.replace('/lich-su-don-hang');
+      router.replace(user.role === 'admin' ? '/admin' : '/lich-su-don-hang');
       return;
     }
 
@@ -84,7 +84,7 @@ function DiscordCallbackContent() {
         if (data.success && data.data?.token) {
           setAuthSession(data.data.token, data.data.user);
           setStatus('success');
-          router.replace('/lich-su-don-hang');
+          router.replace(data.data.user?.role === 'admin' ? '/admin' : '/lich-su-don-hang');
         } else {
           // Nếu mã báo invalid_grant nhưng user trong localStorage đã có phiên đăng nhập
           const existingToken = localStorage.getItem('dtff_auth_token');

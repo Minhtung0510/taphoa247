@@ -11,7 +11,6 @@ export function SideBanners() {
   const pathname = usePathname();
   const storeSettings = useStoreSettings();
 
-  if (pathname?.startsWith('/admin')) return null;
   const [dismissedLeft, setDismissedLeft] = useState(false);
   const [dismissedRight, setDismissedRight] = useState(false);
   const [minimizedLeft, setMinimizedLeft] = useState(false);
@@ -53,6 +52,8 @@ export function SideBanners() {
     'Ưu đãi đặc biệt: Tặng bảo hiểm tài khoản 5 tiếng cho toàn bộ đơn hàng hôm nay!';
   const hotline = storeSettings.store_hotline || '0937809305';
   const telegram = storeSettings.store_telegram || 'https://t.me/taphoa247_support';
+
+  if (pathname?.startsWith('/admin')) return null;
 
   return (
     <>

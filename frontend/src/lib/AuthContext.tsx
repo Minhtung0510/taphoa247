@@ -11,7 +11,6 @@ export interface AuthUser {
   avatar?: string;
   discord_id?: string;
   is_admin?: boolean;
-  balance?: number;
 }
 
 interface AuthContextType {

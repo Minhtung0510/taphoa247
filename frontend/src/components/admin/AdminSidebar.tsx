@@ -77,6 +77,7 @@ export function AdminSidebar({
     {
       title: 'HỆ THỐNG',
       items: [
+        { id: 'users', label: 'Quản Lý Người Dùng', icon: '👥' },
         { id: 'settings', label: 'Cấu Hình Shop', icon: '⚙️' },
       ],
     },

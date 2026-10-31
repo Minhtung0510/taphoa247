@@ -30,11 +30,6 @@ const defaultSettings: StoreSettings = {
 function sanitizeSettings(data: any): StoreSettings {
   if (!data || typeof data !== 'object') return data;
   const copy = { ...data };
-  delete copy.banner_gift_code;
-  delete copy.banner_gift_coupon;
-  delete copy.banner_gift_discount_text;
-  delete copy.banner_text;
-  delete copy.banner_active;
   delete copy.store_real_hearts;
   delete copy.store_maintenance_mode;
   return copy;
@@ -90,6 +85,9 @@ export function SettingsProvider({
       } catch {}
     };
 
+    fetchLatestSettings();
+    const refreshTimer = window.setInterval(fetchLatestSettings, 30000);
+
     // 1. Lắng nghe cập nhật cùng tab (từ Admin form)
     const onLocalUpdated = (e: any) => {
       if (e.detail) {
@@ -122,6 +120,7 @@ export function SettingsProvider({
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
+      window.clearInterval(refreshTimer);
       window.removeEventListener('dtff_settings_updated', onLocalUpdated);
       window.removeEventListener('storage', onStorageChange);
       window.removeEventListener('focus', onFocus);

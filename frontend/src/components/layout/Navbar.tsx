@@ -22,7 +22,6 @@ export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [productsMenuOpen, setProductsMenuOpen] = useState(true);
 
-  if (pathname?.startsWith('/admin')) return null;
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -42,6 +41,8 @@ export function Navbar() {
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
   }, [userDropdownOpen]);
+
+  if (pathname?.startsWith('/admin')) return null;
 
   return (
     <header

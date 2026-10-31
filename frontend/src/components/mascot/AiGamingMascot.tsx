@@ -42,7 +42,6 @@ export function AiGamingMascot() {
   const [isOpen, setIsOpen] = useState(false);
   const [showGreeting, setShowGreeting] = useState(true);
 
-  if (pathname?.startsWith('/admin')) return null;
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       id: '1',
@@ -175,6 +174,8 @@ export function AiGamingMascot() {
       setIsTyping(false);
     }
   };
+
+  if (pathname?.startsWith('/admin')) return null;
 
   return (
     <div className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 select-none font-sans">

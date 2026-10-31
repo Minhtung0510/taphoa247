@@ -182,6 +182,7 @@ class AuthController extends Controller
             'avatar' => 'https://api.dicebear.com/7.x/bottts/svg?seed=' . urlencode($cleanEmail),
         ]);
 
+        $user->forceFill(['last_login_at' => now(), 'last_login_method' => 'password'])->save();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -267,6 +268,7 @@ class AuthController extends Controller
         RateLimiter::clear($throttleKey);
         RateLimiter::clear($emailThrottleKey);
         $expiresAt = $user->isAdmin() ? now()->addHours(12) : null;
+        $user->forceFill(['last_login_at' => now(), 'last_login_method' => 'password'])->save();
         $token = $user->createToken('auth_token', ['*'], $expiresAt)->plainTextToken;
 
         return response()->json([
@@ -280,7 +282,6 @@ class AuthController extends Controller
                     'role' => $user->role,
                     'avatar' => $user->avatar ?: 'https://api.dicebear.com/7.x/bottts/svg?seed=' . urlencode($user->email),
                     'discord_id' => $user->discord_id,
-                    'balance' => (int) ($user->balance ?? 0),
                 ],
                 'token' => $token,
             ],
@@ -436,14 +437,6 @@ class AuthController extends Controller
                 }
             }
 
-            // BẢO MẬT: Ngăn chặn chiếm quyền Admin bằng email Discord trùng email quản trị viên
-            if ($user && $user->isAdmin()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Tài khoản Quản trị viên không được phép đăng nhập trực tiếp qua Discord OAuth. Vui lòng đăng nhập qua cổng Quản trị.',
-                ], 403);
-            }
-
             if (!$user) {
                 // Chưa có user: Nếu email chưa verified hoặc rỗng thì dùng email giả độc lập
                 $finalEmail = ($isVerified && !empty($rawEmail))
@@ -468,6 +461,7 @@ class AuthController extends Controller
             }
 
             $expiresAt = $user->isAdmin() ? now()->addHours(12) : null;
+            $user->forceFill(['last_login_at' => now(), 'last_login_method' => 'discord'])->save();
             $token = $user->createToken('discord_token', ['*'], $expiresAt)->plainTextToken;
 
             return response()->json([
@@ -576,7 +570,6 @@ class AuthController extends Controller
                 'avatar' => $user->avatar ?: 'https://api.dicebear.com/7.x/bottts/svg?seed=' . urlencode($user->email),
                 'discord_id' => $user->discord_id,
                 'is_admin' => $user->isAdmin(),
-                'balance' => (int) ($user->balance ?? 0),
             ],
         ]);
     }

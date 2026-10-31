@@ -2,6 +2,12 @@
 
 return [
 
+    'tls' => [
+        // Optional CA bundle path for Windows/local PHP installations.
+        // TLS peer verification stays enabled when this is empty.
+        'ca_bundle' => env('TLS_CA_BUNDLE') ?: null,
+    ],
+
     /*
     |--------------------------------------------------------------------------
     | Third Party Services

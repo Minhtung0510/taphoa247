@@ -14,6 +14,7 @@ import { AdminProductsView } from '@/components/admin/AdminProductsView';
 import { AdminStockView } from '@/components/admin/AdminStockView';
 import { AdminWarrantyView } from '@/components/admin/AdminWarrantyView';
 import { AdminCouponsView } from '@/components/admin/AdminCouponsView';
+import { AdminUsersView } from '@/components/admin/AdminUsersView';
 import { AdminSettingsView } from '@/components/admin/AdminSettingsView';
 
 export default function AdminPage() {
@@ -81,10 +82,12 @@ export default function AdminPage() {
             setIsDirectAdmin(false);
           }
         } else {
-          // Token giả mạo hoặc user thường không có quyền admin (401 / 403)
-          localStorage.removeItem('dtff_auth_token');
-          localStorage.removeItem('dtff_auth_user');
-          localStorage.removeItem('admin_token');
+          // A valid customer session must survive denied admin access.
+          if (res.status === 401) {
+            localStorage.removeItem('dtff_auth_token');
+            localStorage.removeItem('dtff_auth_user');
+            localStorage.removeItem('admin_token');
+          }
           setIsDirectAdmin(false);
         }
       } catch {
@@ -118,7 +121,7 @@ export default function AdminPage() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [loggingIn, setLoggingIn] = useState(false);
 
-  const [tab, setTab] = useState<'dashboard' | 'revenue' | 'products' | 'stock' | 'orders' | 'warranty' | 'settings' | 'coupons'>('dashboard');
+  const [tab, setTab] = useState<'dashboard' | 'revenue' | 'products' | 'stock' | 'orders' | 'warranty' | 'settings' | 'coupons' | 'users'>('dashboard');
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [revenueData, setRevenueData] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
@@ -260,7 +263,7 @@ export default function AdminPage() {
 
     const checkStatus = (res: Response) => {
       if (res.status === 401 || res.status === 403) {
-        logout();
+        if (res.status === 401) logout();
         setIsDirectAdmin(false);
         throw new Error('404 not found 404');
       }
@@ -430,11 +433,6 @@ export default function AdminPage() {
           if (typeof window !== 'undefined') {
             try {
               const cleanData = { ...json.data };
-              delete cleanData.banner_gift_code;
-              delete cleanData.banner_gift_coupon;
-              delete cleanData.banner_gift_discount_text;
-              delete cleanData.banner_text;
-              delete cleanData.banner_active;
               delete cleanData.store_real_hearts;
               delete cleanData.store_maintenance_mode;
               localStorage.setItem('dtff_settings_data', JSON.stringify(cleanData));
@@ -1393,6 +1391,8 @@ export default function AdminPage() {
       {/* ========================================================================= */}
       {/* TAB 7: CẤU HÌNH CỬA HÀNG (SETTINGS) */}
       {/* ========================================================================= */}
+      {tab === 'users' && <AdminUsersView token={activeToken} />}
+
       {tab === 'settings' && (
         <AdminSettingsView
           settingsData={settingsData}

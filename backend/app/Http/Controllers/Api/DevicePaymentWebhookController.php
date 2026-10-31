@@ -8,6 +8,7 @@ use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
@@ -25,30 +26,13 @@ class DevicePaymentWebhookController extends Controller
      */
     public function handleWebhook(Request $request): JsonResponse
     {
-        // 1. Xác thực bảo mật
-        $secret = config('services.device_gateway.secret') ?: env('DEVICE_GATEWAY_SECRET', 'DTFF_SECRET_TEST_2026');
-        
-        $authHeader = $request->header('Authorization', '');
-        $bearerToken = trim(str_ireplace('Bearer', '', $authHeader));
-
-        // Kiểm tra chữ ký số HMAC-SHA256 (Tier 2)
-        $timestamp = $request->header('X-Timestamp');
-        $signature = $request->header('X-Signature');
-        $rawBody = $request->getContent();
-
-        $isBasicValid = (!empty($bearerToken) && hash_equals($secret, $bearerToken));
-        $isSignedValid = false;
-
-        if (!empty($timestamp) && !empty($signature)) {
-            // Cho phép lệch tối đa 5 phút
-            if (abs(now()->timestamp - (int)$timestamp) <= 300) {
-                $payloadToSign = $timestamp . "\n" . hash('sha256', $rawBody);
-                $expectedSig = hash_hmac('sha256', $payloadToSign, $secret);
-                $isSignedValid = hash_equals($expectedSig, $signature);
-            }
+        $secret = (string) config('services.device_gateway.secret', '');
+        if (strlen($secret) < 32 || hash_equals('DTFF_SECRET_TEST_2026', $secret)) {
+            Log::critical('[Device Gateway] DEVICE_GATEWAY_SECRET trống, yếu hoặc vẫn dùng giá trị mặc định.');
+            return response()->json(['error' => 'gateway_not_configured'], 503);
         }
 
-        if (!$isBasicValid && !isSignedValid) {
+        if (!$this->hasValidSignature($request, $secret)) {
             Log::warning('[Device Gateway] Từ chối truy cập: Sai Secret hoặc Signature từ IP ' . $request->ip());
             return response()->json(['error' => 'unauthorized', 'message' => 'Xác thực thiết bị thất bại'], 401);
         }
@@ -133,11 +117,13 @@ class DevicePaymentWebhookController extends Controller
      */
     public function handleHeartbeat(Request $request): JsonResponse
     {
-        $secret = config('services.device_gateway.secret') ?: env('DEVICE_GATEWAY_SECRET', 'DTFF_SECRET_TEST_2026');
-        $authHeader = $request->header('Authorization', '');
-        $bearerToken = trim(str_ireplace('Bearer', '', $authHeader));
+        $secret = (string) config('services.device_gateway.secret', '');
+        if (strlen($secret) < 32 || hash_equals('DTFF_SECRET_TEST_2026', $secret)) {
+            Log::critical('[Device Gateway] DEVICE_GATEWAY_SECRET trống, yếu hoặc vẫn dùng giá trị mặc định.');
+            return response()->json(['error' => 'gateway_not_configured'], 503);
+        }
 
-        if (!hash_equals($secret, $bearerToken)) {
+        if (!$this->hasValidSignature($request, $secret)) {
             return response()->json(['error' => 'unauthorized'], 401);
         }
 
@@ -152,6 +138,29 @@ class DevicePaymentWebhookController extends Controller
         ], 180);
 
         return response()->json(['ok' => true, 'server_time' => now()->timestamp]);
+    }
+
+    private function hasValidSignature(Request $request, string $secret): bool
+    {
+        $timestamp = (string) $request->header('X-Timestamp', '');
+        $signature = (string) $request->header('X-Signature', '');
+        if (!preg_match('/^\\d{10}$/', $timestamp) || !preg_match('/^[a-fA-F0-9]{64}$/', $signature)) {
+            return false;
+        }
+
+        if (abs(now()->timestamp - (int) $timestamp) > 300) {
+            return false;
+        }
+
+        $payloadToSign = $timestamp . "\n" . hash('sha256', $request->getContent());
+        $expectedSignature = hash_hmac('sha256', $payloadToSign, $secret);
+
+        if (!hash_equals($expectedSignature, strtolower($signature))) {
+            return false;
+        }
+
+        $replayKey = 'device_gateway_signature:' . hash('sha256', $timestamp . ':' . strtolower($signature));
+        return Cache::add($replayKey, true, now()->addMinutes(5));
     }
 
     /**

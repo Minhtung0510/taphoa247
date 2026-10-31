@@ -1,10 +1,17 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/lib/AuthContext';
 
 export function AuthModal() {
-  const { isAuthModalOpen, closeAuthModal, login, sendOtp, register, getDiscordRedirectUrl } = useAuth();
+  const { isAuthModalOpen } = useAuth();
+
+  // Each opening owns a fresh form, including messages and credentials.
+  return isAuthModalOpen ? <AuthModalForm /> : null;
+}
+
+function AuthModalForm() {
+  const { closeAuthModal, login, sendOtp, register, getDiscordRedirectUrl } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'traditional' | 'discord'>('discord');
   const [isRegisterMode, setIsRegisterMode] = useState(false);
@@ -23,7 +30,11 @@ export function AuthModal() {
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  if (!isAuthModalOpen) return null;
+  useEffect(() => {
+    if (otpCountdown <= 0) return;
+    const timer = setTimeout(() => setOtpCountdown(otpCountdown - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [otpCountdown]);
 
   const handleSendOtpCode = async () => {
     setError(null);
@@ -41,15 +52,6 @@ export function AuthModal() {
         setOtpSent(true);
         setSuccessMsg(res.message);
         setOtpCountdown(60);
-        const timer = setInterval(() => {
-          setOtpCountdown((prev) => {
-            if (prev <= 1) {
-              clearInterval(timer);
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
       } else {
         setError(res.message || 'Không thể gửi mã OTP.');
       }
@@ -87,15 +89,11 @@ export function AuthModal() {
         const res = await register(name, email, password, otp.trim());
         if (!res.success) {
           setError(res.message || 'Đăng ký không thành công');
-        } else {
-          setSuccessMsg('Đăng ký tài khoản thành công!');
         }
       } else {
         const res = await login(email, password);
         if (!res.success) {
           setError(res.message || 'Email hoặc mật khẩu không chính xác');
-        } else {
-          setSuccessMsg('Đăng nhập thành công!');
         }
       }
     } catch (err: any) {

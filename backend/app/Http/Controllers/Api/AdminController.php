@@ -26,6 +26,140 @@ class AdminController extends Controller
     /**
      * Tải nhanh toàn bộ dữ liệu quản trị chỉ trong 1 request duy nhất (giảm 85% độ trễ)
      */
+    public function users(Request $request): JsonResponse
+    {
+        $validated = $this->validateUserFilters($request);
+        $customers = \App\Models\User::where('role', 'customer');
+        return response()->json([
+            'success' => true,
+            'data' => $this->userQuery($validated)->paginate(20),
+            'summary' => [
+                'total' => (clone $customers)->count(),
+                'admins' => \App\Models\User::where('role', 'admin')->count(),
+                'discord' => (clone $customers)->whereNotNull('discord_id')->count(),
+                'unverified' => (clone $customers)->whereNull('email_verified_at')->count(),
+            ],
+        ]);
+    }
+
+    public function exportUsers(Request $request): \Symfony\Component\HttpFoundation\StreamedResponse
+    {
+        $query = $this->userQuery($this->validateUserFilters($request));
+        return response()->streamDownload(function () use ($query) {
+            $output = fopen('php://output', 'w');
+            fwrite($output, "\xEF\xBB\xBF");
+            fputcsv($output, ['ID', 'Tên', 'Email', 'Vai trò', 'Đăng nhập bằng', 'Email xác minh', 'Số đơn', 'Đơn hoàn tất', 'Tổng chi tiêu', 'Đăng nhập gần nhất', 'Ngày tạo']);
+            $query->orderBy('id')->chunk(500, function ($users) use ($output) {
+                foreach ($users as $user) {
+                    $methods = array_filter([$user->has_password ? 'Email / Mật khẩu' : null, $user->discord_id ? 'Discord' : null]);
+                    $cells = [
+                        $user->id, $user->name, $user->email, $user->role, implode(' + ', $methods) ?: 'Chưa thiết lập',
+                        $user->email_verified_at ? 'Đã xác minh' : 'Chưa xác minh', $user->orders_count,
+                        $user->completed_orders_count, $user->total_spent ?? 0, $user->last_login_at,
+                        optional($user->created_at)->toDateTimeString(),
+                    ];
+                    fputcsv($output, array_map(fn ($value) => is_string($value) && preg_match('/^\s*[=+@-]/u', $value) ? "'" . $value : $value, $cells));
+                }
+            });
+            fclose($output);
+        }, 'danh-sach-nguoi-dung-' . now()->format('Ymd-His') . '.csv', ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    private function validateUserFilters(Request $request): array
+    {
+        return $request->validate([
+            'search' => 'nullable|string|max:150',
+            'role' => 'nullable|in:admin,customer',
+            'page' => 'nullable|integer|min:1',
+            'method' => 'nullable|in:password,discord,both',
+            'verified' => 'nullable|in:yes,no',
+            'sort' => 'nullable|in:newest,oldest,spend,orders,login',
+        ]);
+    }
+
+    private function userQuery(array $filters): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = \App\Models\User::query()
+            ->select(['id', 'name', 'email', 'role', 'discord_id', 'created_at', 'email_verified_at', 'last_login_at', 'last_login_method'])
+            ->selectRaw("CASE WHEN password IS NOT NULL AND password <> '' THEN 1 ELSE 0 END AS has_password")
+            ->selectRaw("CASE WHEN email LIKE '%@dtffshop.local' THEN 1 ELSE 0 END AS is_placeholder_email")
+            ->withCount(['orders', 'orders as completed_orders_count' => fn ($q) => $q->where('status', 'completed'), 'claims'])
+            ->withSum(['orders as total_spent' => fn ($q) => $q->whereIn('status', ['paid', 'processing', 'completed'])], 'total_amount')
+            ->withMax('orders', 'created_at');
+        if ($search = trim($filters['search'] ?? '')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('email', 'like', "%{$search}%")
+                    ->orWhere('discord_id', $search);
+                if (ctype_digit($search)) $q->orWhere('id', $search);
+            });
+        }
+        if (!empty($filters['role'])) $query->where('role', $filters['role']);
+        $method = $filters['method'] ?? null;
+        if ($method === 'password' || $method === 'both') $query->whereNotNull('password')->where('password', '<>', '');
+        if ($method === 'discord' || $method === 'both') $query->whereNotNull('discord_id');
+        if (($filters['verified'] ?? null) === 'yes') $query->whereNotNull('email_verified_at');
+        if (($filters['verified'] ?? null) === 'no') $query->whereNull('email_verified_at');
+        $sort = $filters['sort'] ?? 'newest';
+        match ($sort) {
+            'oldest' => $query->orderBy('created_at')->orderBy('id'),
+            'spend' => $query->orderByDesc('total_spent')->orderByDesc('id'),
+            'orders' => $query->orderByDesc('orders_count')->orderByDesc('id'),
+            'login' => $query->orderByDesc('last_login_at')->orderByDesc('id'),
+            default => $query->latest('id'),
+        };
+        return $query;
+    }
+
+    public function createUser(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8|max:128',
+            'role' => 'required|in:customer,admin',
+        ]);
+        $user = \App\Models\User::create($data);
+        return response()->json(['success' => true, 'data' => $user->only(['id', 'name', 'email', 'role'])], 201);
+    }
+
+    public function updateUser(Request $request, \App\Models\User $user): JsonResponse
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => ['required', 'email', 'max:255', \Illuminate\Validation\Rule::unique('users', 'email')->ignore($user->id)],
+            'password' => 'nullable|string|min:8|max:128',
+            'role' => 'required|in:customer,admin',
+        ]);
+        if ($user->id === $request->user()->id && $data['role'] !== 'admin') {
+            return response()->json(['success' => false, 'message' => 'Không thể tự gỡ quyền quản trị của tài khoản đang đăng nhập.'], 422);
+        }
+        if (empty($data['password'])) unset($data['password']);
+        DB::transaction(function () use ($user, $data) {
+            if ($user->email !== $data['email']) $user->email_verified_at = null;
+            $revoke = isset($data['password']) || $user->role !== $data['role'] || $user->email !== $data['email'];
+            $user->fill($data)->save();
+            if ($revoke) $user->tokens()->delete();
+        });
+        return response()->json(['success' => true]);
+    }
+
+    public function deleteUser(Request $request, \App\Models\User $user): JsonResponse
+    {
+        if ($user->id === $request->user()->id || $user->isAdmin()) {
+            return response()->json(['success' => false, 'message' => 'Không thể xóa tài khoản quản trị.'], 422);
+        }
+        return DB::transaction(function () use ($user) {
+            $user = \App\Models\User::whereKey($user->id)->lockForUpdate()->firstOrFail();
+            if ($user->orders()->exists() || $user->claims()->exists()) {
+                return response()->json(['success' => false, 'message' => 'Không thể xóa tài khoản có đơn hàng hoặc yêu cầu bảo hành.'], 422);
+            }
+            $user->tokens()->delete();
+            $user->delete();
+            return response()->json(['success' => true]);
+        });
+    }
+
     public function bootstrap(): JsonResponse
     {
         $dashboard = $this->dashboard()->original['data'] ?? [];

@@ -233,6 +233,10 @@ class CatalogController extends Controller
     {
         $settings = Cache::remember('store_settings_public', 300, function () {
             return [
+                'banner_active' => (bool) Setting::get('banner_active', false),
+                'banner_text' => Setting::get('banner_text', ''),
+                'banner_gift_code' => Setting::get('banner_gift_code', ''),
+                'banner_gift_discount_text' => Setting::get('banner_gift_discount_text', ''),
                 'store_name' => Setting::get('store_name', 'Tạp Hóa 247'),
                 'store_slogan' => Setting::get('store_slogan', 'Shop Dịch Vụ Số & Acc Game Tự Động 24/7 Uy Tín #1'),
                 'store_hotline' => Setting::get('store_hotline', '0937809305'),

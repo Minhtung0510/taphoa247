@@ -74,11 +74,9 @@ class SePayService implements PaymentGatewayInterface
 
         foreach ($endpoints as $url) {
             try {
-                $client = Http::timeout(8);
-                // Bỏ qua SSL verification trên môi trường Windows dev hoặc non-production để tránh lỗi cURL 60 (thiếu cacert.pem)
-                if (!app()->environment('production') || DIRECTORY_SEPARATOR === '\\') {
-                    $client = $client->withoutVerifying();
-                }
+                $client = Http::withOptions([
+                    'verify' => config('services.tls.ca_bundle') ?: true,
+                ])->timeout(8);
 
                 $response = $client->withHeaders([
                     'Authorization' => 'Bearer ' . $this->apiKey,
@@ -96,25 +94,6 @@ class SePayService implements PaymentGatewayInterface
                     return null;
                 }
             } catch (\Throwable $e) {
-                // Tự động retry với withoutVerifying nếu gặp cURL error 60 (SSL Certificate issue)
-                if (str_contains($e->getMessage(), 'cURL error 60')) {
-                    try {
-                        $fallbackRes = Http::withoutVerifying()
-                            ->timeout(8)
-                            ->withHeaders([
-                                'Authorization' => 'Bearer ' . $this->apiKey,
-                                'Content-Type' => 'application/json',
-                            ])->get($url);
-
-                        if ($fallbackRes->successful()) {
-                            $json = $fallbackRes->json();
-                            Cache::put($cacheKey, $json, 3);
-                            return $json;
-                        }
-                    } catch (\Throwable $inner) {
-                        Log::error('[SePay] Ngoại lệ fallback: ' . $inner->getMessage());
-                    }
-                }
                 Log::error('[SePay] Ngoại lệ khi kết nối SePay: ' . $e->getMessage());
             }
         }

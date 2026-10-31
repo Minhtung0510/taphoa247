@@ -50,8 +50,8 @@ class DigishopResellerService
     public function createOrder(string $productId, string $orderRef): array
     {
         try {
-            $response = Http::withHeaders($this->headers())
-                ->withoutVerifying()  // Fix cURL error 60 trên Windows (không có CA bundle)
+            $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
+                ->withHeaders($this->headers())
                 ->timeout(30)
                 ->post("{$this->baseUrl}/reseller-create-order", [
                     'items' => [
@@ -119,8 +119,8 @@ class DigishopResellerService
     public function getOrder(string $digishopOrderId): array
     {
         try {
-            $response = Http::withHeaders($this->headers())
-                ->withoutVerifying()  // Fix cURL error 60 trên Windows
+            $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
+                ->withHeaders($this->headers())
                 ->timeout(15)
                 ->get("{$this->baseUrl}/reseller-get-orders", [
                     'order_id' => $digishopOrderId,
@@ -164,8 +164,8 @@ class DigishopResellerService
     public function getBalance(): int
     {
         try {
-            $response = Http::withHeaders($this->headers())
-                ->withoutVerifying()  // Fix cURL error 60 trên Windows
+            $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
+                ->withHeaders($this->headers())
                 ->timeout(10)
                 ->post("{$this->baseUrl}/reseller-get-profile", []);
 

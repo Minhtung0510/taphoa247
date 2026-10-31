@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\CatalogController;
 use App\Http\Controllers\Api\CheckoutController;
 use App\Http\Controllers\Api\CouponController;
 use App\Http\Controllers\Api\DeliveryController;
+use App\Http\Controllers\Api\EmailVerificationController;
 use App\Http\Controllers\Api\WarrantyController;
 use App\Http\Middleware\EnsureAdmin;
 use Illuminate\Support\Facades\Route;
@@ -43,6 +44,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/warranty/evidence/{id}', [WarrantyController::class, 'viewEvidence'])->name('warranty.evidence')->middleware('signed');
 
     // 5. Auth (Độc lập bộ đếm chống nghẽn)
+    Route::post('/auth/email/verify', [EmailVerificationController::class, 'verify'])->middleware('throttle:30,1');
     Route::post('/auth/send-otp', [AuthController::class, 'sendOtp'])->middleware('throttle:6,1,otp');
     Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:15,1,register');
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:15,1,login')->name('login');
@@ -57,6 +59,11 @@ Route::prefix('v1')->group(function () {
 
         // 6. Admin Management API
         Route::prefix('admin')->middleware(EnsureAdmin::class)->group(function () {
+            Route::post('/users', [AdminController::class, 'createUser']);
+            Route::put('/users/{user}', [AdminController::class, 'updateUser']);
+            Route::delete('/users/{user}', [AdminController::class, 'deleteUser']);
+            Route::get('/users/export', [AdminController::class, 'exportUsers']);
+            Route::get('/users', [AdminController::class, 'users']);
             Route::get('/bootstrap', [AdminController::class, 'bootstrap']);
             Route::get('/dashboard', [AdminController::class, 'dashboard']);
             Route::get('/categories', [AdminController::class, 'categories']);

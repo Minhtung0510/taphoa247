@@ -135,4 +135,27 @@ class DiscordAccountTakeoverAndCsrfTest extends TestCase
         $this->assertNotNull($created);
         $this->assertEquals('discord_5555444433332222@dtffshop.local', $created->email);
     }
+    public function test_linked_admin_can_login_with_verified_discord_and_get_admin_token(): void
+    {
+        $admin = User::create([
+            'name' => 'Store Admin',
+            'email' => 'store-admin@example.com',
+            'password' => bcrypt('secure-admin-password'),
+            'role' => 'admin',
+            'discord_id' => '3344556677889900',
+        ]);
+        $state = 'valid-admin-discord-state-12345';
+        Cache::put("discord_oauth_state:{$state}", true, now()->addMinutes(10));
+        Http::fake([
+            'https://discord.com/api/oauth2/token' => Http::response(['access_token' => 'admin-discord-token'], 200),
+            'https://discord.com/api/users/@me' => Http::response([
+                'id' => '3344556677889900', 'username' => 'StoreAdmin',
+                'email' => 'store-admin@example.com', 'verified' => true,
+            ], 200),
+        ]);
+        $response = $this->postJson('/api/v1/auth/discord/callback', ['code' => 'admin-code', 'state' => $state]);
+        $response->assertOk()->assertJsonPath('success', true)->assertJsonPath('data.user.role', 'admin');
+        $this->assertSame('discord', $admin->fresh()->last_login_method);
+        $this->withToken($response->json('data.token'))->getJson('/api/v1/admin/users')->assertOk();
+    }
 }

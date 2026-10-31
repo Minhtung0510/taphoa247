@@ -46,8 +46,8 @@ class ShopMmoService
     public function createOrder(int $productId, int $quantity, string $orderRef): array
     {
         try {
-            $response = Http::withHeaders($this->headers())
-                ->withoutVerifying()  // Fix cURL error 60 trên Windows (không có CA bundle)
+            $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
+                ->withHeaders($this->headers())
                 ->timeout(30)
                 ->post("{$this->baseUrl}/orders/create", [
                     'product_id' => $productId,
@@ -120,8 +120,8 @@ class ShopMmoService
     public function getOrder(string $shopmmoOrderId): array
     {
         try {
-            $response = Http::withHeaders($this->headers())
-                ->withoutVerifying()
+            $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
+                ->withHeaders($this->headers())
                 ->timeout(15)
                 ->get("{$this->baseUrl}/orders/{$shopmmoOrderId}");
 
@@ -144,8 +144,8 @@ class ShopMmoService
     public function getBalance(): float
     {
         try {
-            $response = Http::withHeaders($this->headers())
-                ->withoutVerifying()
+            $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
+                ->withHeaders($this->headers())
                 ->timeout(10)
                 ->get("{$this->baseUrl}/profile");
 
