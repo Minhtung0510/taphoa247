@@ -19,6 +19,21 @@ class ClaimItem extends Model
         'error_description',
     ];
 
+    protected $appends = ['evidence_url'];
+
+    public function getEvidenceUrlAttribute(): ?string
+    {
+        if (empty($this->evidence_path) || $this->evidence_path === 'no_file') {
+            return null;
+        }
+
+        return \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'warranty.evidence',
+            now()->addMinutes(10),
+            ['id' => $this->id]
+        );
+    }
+
     public function claim()
     {
         return $this->belongsTo(WarrantyClaim::class, 'warranty_claim_id');

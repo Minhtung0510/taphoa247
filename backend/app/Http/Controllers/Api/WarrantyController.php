@@ -220,9 +220,9 @@ class WarrantyController extends Controller
     /**
      * Tải/xem file bằng chứng minh chứng lỗi
      */
-    public function viewEvidence(Request $request, int $claimItemId): BinaryFileResponse
+    public function viewEvidence(Request $request, int $id): BinaryFileResponse
     {
-        $claimItem = ClaimItem::with('claim.order')->findOrFail($claimItemId);
+        $claimItem = ClaimItem::with('claim.order')->findOrFail($id);
 
         $path = $claimItem->evidence_path;
 

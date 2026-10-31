@@ -40,7 +40,7 @@ Route::prefix('v1')->group(function () {
     Route::get('/orders/{orderCode}/warranty-eligibility', [WarrantyController::class, 'eligibility']);
     Route::post('/warranty/claims', [WarrantyController::class, 'claim'])->middleware('throttle:15,1,claim');
     Route::get('/warranty/claims/{claimCode}', [WarrantyController::class, 'claimStatus']);
-    Route::get('/warranty/evidence/{id}', [WarrantyController::class, 'viewEvidence']);
+    Route::get('/warranty/evidence/{id}', [WarrantyController::class, 'viewEvidence'])->name('warranty.evidence')->middleware('signed');
 
     // 5. Auth (Độc lập bộ đếm chống nghẽn)
     Route::post('/auth/send-otp', [AuthController::class, 'sendOtp'])->middleware('throttle:6,1,otp');

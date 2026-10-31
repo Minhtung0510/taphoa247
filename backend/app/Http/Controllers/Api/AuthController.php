@@ -600,7 +600,7 @@ class AuthController extends Controller
                             'status' => $claim->state,
                             'status_label' => $claim->state === 'approved' ? 'Đã đổi acc mới' : ($claim->state === 'waiting_admin' ? 'Đang chờ duyệt' : 'Từ chối'),
                             'admin_note' => $claim->admin_note,
-                            'evidence_url' => ($claimItem && $claimItem->evidence_path !== 'no_file') ? url("/api/v1/warranty/evidence/{$claimItem->id}") : null,
+                            'evidence_url' => $claimItem?->evidence_url,
                             'replacement_credentials' => ($claim->state === 'approved') ? $claimItem?->replacementStock?->credentials : null,
                         ] : null,
                     ];
@@ -629,7 +629,7 @@ class AuthController extends Controller
                                 'claim_item_id' => $ci->id,
                                 'order_item_id' => $ci->order_item_id,
                                 'error_description' => $ci->error_description,
-                                'evidence_url' => $ci->evidence_path !== 'no_file' ? url("/api/v1/warranty/evidence/{$ci->id}") : null,
+                                'evidence_url' => $ci->evidence_url,
                                 'replacement_credentials' => $claim->state === 'approved' ? $ci->replacementStock?->credentials : null,
                             ];
                         }),

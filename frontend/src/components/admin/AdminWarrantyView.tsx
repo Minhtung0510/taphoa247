@@ -13,6 +13,7 @@ interface ClaimItem {
   };
   error_description?: string;
   evidence_path?: string;
+  evidence_url?: string;
 }
 
 interface WarrantyClaim {
@@ -306,7 +307,7 @@ export function AdminWarrantyView({
                       <td className="py-4 px-4">
                         {c.claim_items?.map((ci) => {
                           if (ci.evidence_path && ci.evidence_path !== 'no_file') {
-                            const imgUrl = `${API_BASE_URL}/warranty/evidence/${ci.id}`;
+                            const imgUrl = ci.evidence_url || `${API_BASE_URL}/warranty/evidence/${ci.id}`;
                             return (
                               <button
                                 key={ci.id}
