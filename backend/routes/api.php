@@ -46,6 +46,8 @@ Route::prefix('v1')->group(function () {
     // 5. Auth (Độc lập bộ đếm chống nghẽn)
     Route::post('/auth/email/verify', [EmailVerificationController::class, 'verify'])->middleware('throttle:30,1');
     Route::post('/auth/send-otp', [AuthController::class, 'sendOtp'])->middleware('throttle:6,1,otp');
+    Route::post('/auth/password/otp', [AuthController::class, 'sendPasswordResetOtp'])->middleware('throttle:6,1,password-reset-otp');
+    Route::post('/auth/password/reset', [AuthController::class, 'resetPassword'])->middleware('throttle:10,1,password-reset');
     Route::post('/auth/register', [AuthController::class, 'register'])->middleware('throttle:15,1,register');
     Route::post('/auth/login', [AuthController::class, 'login'])->middleware('throttle:15,1,login')->name('login');
     Route::get('/auth/discord/redirect', [AuthController::class, 'discordRedirect']);

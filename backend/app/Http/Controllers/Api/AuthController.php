@@ -100,6 +100,94 @@ class AuthController extends Controller
         }
     }
 
+    /** Gửi OTP đặt lại mật khẩu; phản hồi chung để không tiết lộ tài khoản tồn tại. */
+    public function sendPasswordResetOtp(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => ['required', 'string', 'max:150', 'email:rfc'],
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $email = strtolower(trim((string) $request->email));
+        $rateKey = 'password_reset_otp_rate_' . md5($email . '|' . $request->ip());
+        $emailRateKey = 'password_reset_otp_rate_email_' . md5($email);
+        if (Cache::has($rateKey) || Cache::has($emailRateKey)) {
+            $ttl = max(1, (int) Cache::get(Cache::has($rateKey) ? $rateKey : $emailRateKey) - time());
+            return response()->json(['success' => false, 'message' => "Vui lòng chờ {$ttl} giây trước khi yêu cầu mã mới."], 429);
+        }
+
+        Cache::put($rateKey, time() + 60, 60);
+        Cache::put($emailRateKey, time() + 60, 60);
+        $user = User::where('email', $email)->whereNotNull('email_verified_at')->first();
+        if ($user) {
+            $code = sprintf('%06d', random_int(100000, 999999));
+            Cache::put('password_reset_otp_' . $email, $code, now()->addMinutes(10));
+            Cache::forget('password_reset_otp_attempts_' . $email);
+            try {
+                Mail::html(
+                    '<div style="font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:32px;background:#0b1329;color:#f1f5f9;border-radius:14px;text-align:center">' .
+                    '<h2 style="color:#00e5a0">TẠP HÓA 247</h2><p>Mã đặt lại mật khẩu của bạn:</p>' .
+                    '<p style="font-size:32px;letter-spacing:8px;color:#00e5a0;font-weight:bold">' . $code . '</p>' .
+                    '<p>Mã có hiệu lực trong 10 phút. Nếu bạn không yêu cầu, hãy bỏ qua email này.</p></div>',
+                    function ($message) use ($email) {
+                        $message->to($email)->subject('[TẠP HÓA 247] Mã đặt lại mật khẩu');
+                    }
+                );
+            } catch (\Throwable $e) {
+                Cache::forget('password_reset_otp_' . $email);
+                Log::error('[Mail Password Reset Error] Không thể gửi email: ' . $e->getMessage());
+                // Giữ nguyên phản hồi chung để lỗi SMTP không làm lộ trạng thái tài khoản.
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => 'Nếu email có tài khoản đã xác minh, mã đặt lại mật khẩu sẽ được gửi đến hộp thư.']);
+    }
+
+    /** Đổi mật khẩu sau khi chứng minh quyền sở hữu email bằng OTP. */
+    public function resetPassword(Request $request): JsonResponse
+    {
+        $validator = Validator::make($request->all(), [
+            'email' => ['required', 'string', 'max:150', 'email:rfc'],
+            'otp' => 'required|string|size:6|regex:/^[0-9]{6}$/',
+            'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::defaults()],
+        ]);
+        if ($validator->fails()) {
+            return response()->json(['success' => false, 'message' => $validator->errors()->first()], 422);
+        }
+
+        $email = strtolower(trim((string) $request->email));
+        $otpKey = 'password_reset_otp_' . $email;
+        $attemptsKey = 'password_reset_otp_attempts_' . $email;
+        $cachedOtp = Cache::get($otpKey);
+        $attempts = (int) Cache::get($attemptsKey, 0);
+        if (!$cachedOtp || !hash_equals((string) $cachedOtp, (string) $request->otp)) {
+            $attempts++;
+            if ($attempts >= 5) {
+                Cache::forget($otpKey);
+                Cache::forget($attemptsKey);
+                return response()->json(['success' => false, 'message' => 'Mã OTP đã bị hủy do nhập sai quá số lần. Vui lòng yêu cầu mã mới.'], 422);
+            }
+            Cache::put($attemptsKey, $attempts, now()->addMinutes(10));
+            return response()->json(['success' => false, 'message' => 'Mã OTP không chính xác hoặc đã hết hạn.'], 422);
+        }
+
+        // Tiêu thụ OTP ngay khi hợp lệ để không thể phát lại cùng mã nhiều lần.
+        Cache::forget($otpKey);
+        Cache::forget($attemptsKey);
+
+        $user = User::where('email', $email)->whereNotNull('email_verified_at')->first();
+        if (!$user) {
+            return response()->json(['success' => false, 'message' => 'Không thể đặt lại mật khẩu cho tài khoản này.'], 422);
+        }
+
+        $user->password = Hash::make($request->password);
+        $user->save();
+        $user->tokens()->delete();
+        return response()->json(['success' => true, 'message' => 'Đã đổi mật khẩu. Bạn có thể đăng nhập bằng mật khẩu mới.']);
+    }
+
     /**
      * Đăng ký tài khoản (Email + Mật khẩu + OTP Xác thực)
      */

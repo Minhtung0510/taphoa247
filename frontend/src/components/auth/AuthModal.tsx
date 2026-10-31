@@ -11,10 +11,11 @@ export function AuthModal() {
 }
 
 function AuthModalForm() {
-  const { closeAuthModal, login, sendOtp, register, getDiscordRedirectUrl } = useAuth();
+  const { closeAuthModal, login, sendOtp, register, sendPasswordResetOtp, resetPassword, getDiscordRedirectUrl } = useAuth();
 
   const [activeTab, setActiveTab] = useState<'traditional' | 'discord'>('discord');
   const [isRegisterMode, setIsRegisterMode] = useState(false);
+  const [isForgotMode, setIsForgotMode] = useState(false);
 
   // Form fields
   const [name, setName] = useState('');
@@ -47,7 +48,7 @@ function AuthModalForm() {
 
     setSendingOtp(true);
     try {
-      const res = await sendOtp(email.trim());
+      const res = isForgotMode ? await sendPasswordResetOtp(email.trim()) : await sendOtp(email.trim());
       if (res.success) {
         setOtpSent(true);
         setSuccessMsg(res.message);
@@ -89,6 +90,25 @@ function AuthModalForm() {
         const res = await register(name, email, password, otp.trim());
         if (!res.success) {
           setError(res.message || 'Đăng ký không thành công');
+        }
+      } else if (isForgotMode) {
+        if (!/^\d{6}$/.test(otp.trim())) {
+          setError('Vui lòng nhập mã OTP gồm 6 chữ số đã gửi về email.');
+          return;
+        }
+        if (password.length < 8) {
+          setError('Mật khẩu mới cần ít nhất 8 ký tự.');
+          return;
+        }
+        const res = await resetPassword(email.trim(), otp.trim(), password);
+        if (res.success) {
+          setIsForgotMode(false);
+          setOtp('');
+          setPassword('');
+          setOtpSent(false);
+          setSuccessMsg('Đổi mật khẩu thành công. Hãy đăng nhập bằng mật khẩu mới.');
+        } else {
+          setError(res.message || 'Không thể đặt lại mật khẩu.');
         }
       } else {
         const res = await login(email, password);
@@ -149,7 +169,7 @@ function AuthModalForm() {
             🎮
           </div>
           <h2 className="text-xl font-black text-white tracking-wide">
-            {isRegisterMode && activeTab === 'traditional' ? 'Tạo Tài Khoản Tạp Hóa 247' : 'Đăng Nhập Tạp Hóa 247'}
+            {isRegisterMode && activeTab === 'traditional' ? 'Tạo Tài Khoản Tạp Hóa 247' : isForgotMode ? 'Quên Mật Khẩu' : 'Đăng Nhập Tạp Hóa 247'}
           </h2>
           <p className="text-xs text-slate-400 mt-1">
             Xem lịch sử tài khoản đã mua, bảo hành 1 chạm và quản lý đơn hàng
@@ -258,18 +278,18 @@ function AuthModalForm() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
-                {isRegisterMode ? 'Địa chỉ Email (Nhận mã OTP)' : 'Email hoặc Tên tài khoản'}
+                {isRegisterMode ? 'Địa chỉ Email (Nhận mã OTP)' : isForgotMode ? 'Địa chỉ Email đã xác minh' : 'Email hoặc Tên tài khoản'}
               </label>
               <div className="flex gap-2">
                 <input
-                  type={isRegisterMode ? 'email' : 'text'}
+                  type={isRegisterMode || isForgotMode ? 'email' : 'text'}
                   required
-                  placeholder={isRegisterMode ? 'tenban@gmail.com' : 'email@gmail.com'}
+                  placeholder={isRegisterMode || isForgotMode ? 'tenban@gmail.com' : 'email@gmail.com'}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="flex-1 px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-400 transition-colors"
                 />
-                {isRegisterMode && (
+                {(isRegisterMode || isForgotMode) && (
                   <button
                     type="button"
                     onClick={handleSendOtpCode}
@@ -288,10 +308,10 @@ function AuthModalForm() {
               </div>
             </div>
 
-            {isRegisterMode && (
+            {(isRegisterMode || isForgotMode) && (
               <div>
                 <label className="block text-xs font-semibold text-slate-300 mb-1">
-                  Mã xác thực OTP (6 số gửi về Email)
+                  {isForgotMode ? 'Mã đặt lại mật khẩu (6 số gửi về Email)' : 'Mã xác thực OTP (6 số gửi về Email)'}
                 </label>
                 <input
                   type="text"
@@ -303,18 +323,18 @@ function AuthModalForm() {
                   className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs font-mono tracking-widest text-center focus:outline-none focus:border-emerald-400 transition-colors"
                 />
                 <p className="text-[10px] text-slate-400 mt-1">
-                  * Nhập email và bấm <b>Gửi mã OTP</b>, sau đó kiểm tra hộp thư (hoặc mục Spam).
+                  * Nhập email và bấm <b>{isForgotMode ? 'Gửi mã đặt lại' : 'Gửi mã OTP'}</b>, sau đó kiểm tra hộp thư (hoặc mục Spam).
                 </p>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">Mật khẩu</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">{isForgotMode ? 'Mật khẩu mới' : 'Mật khẩu'}</label>
               <input
                 type="password"
                 required
-                minLength={6}
-                placeholder="Ít nhất 6 ký tự"
+                minLength={isForgotMode ? 8 : 6}
+                placeholder={isForgotMode ? 'Ít nhất 8 ký tự' : 'Ít nhất 6 ký tự'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-xl text-white text-xs focus:outline-none focus:border-emerald-400 transition-colors"
@@ -328,13 +348,18 @@ function AuthModalForm() {
             >
               {loading
                 ? 'Đang xử lý...'
-                : isRegisterMode
+                : isForgotMode ? 'Đặt Lại Mật Khẩu' : isRegisterMode
                   ? 'Đăng Ký Tài Khoản'
                   : 'Đăng Nhập Ngay'}
             </button>
 
             <div className="pt-2 text-center text-xs text-slate-400">
-              {isRegisterMode ? (
+              {isForgotMode ? (
+                <>
+                  Nhớ lại mật khẩu?{' '}
+                  <button type="button" onClick={() => { setIsForgotMode(false); setOtp(''); setError(null); setSuccessMsg(null); }} className="text-emerald-400 hover:underline font-semibold">Quay lại đăng nhập</button>
+                </>
+              ) : isRegisterMode ? (
                 <>
                   Đã có tài khoản?{' '}
                   <button
@@ -350,6 +375,13 @@ function AuthModalForm() {
                 </>
               ) : (
                 <>
+                  <button
+                    type="button"
+                    onClick={() => { setIsForgotMode(true); setOtp(''); setError(null); setSuccessMsg(null); setOtpSent(false); }}
+                    className="mb-3 block w-full text-emerald-400 hover:underline font-semibold"
+                  >
+                    Quên mật khẩu?
+                  </button>
                   Chưa có tài khoản?{' '}
                   <button
                     type="button"

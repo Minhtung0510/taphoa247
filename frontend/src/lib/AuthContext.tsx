@@ -22,6 +22,8 @@ interface AuthContextType {
   closeAuthModal: () => void;
   login: (email: string, password: string) => Promise<{ success: boolean; message?: string }>;
   sendOtp: (email: string) => Promise<{ success: boolean; message: string }>;
+  sendPasswordResetOtp: (email: string) => Promise<{ success: boolean; message: string }>;
+  resetPassword: (email: string, otp: string, password: string) => Promise<{ success: boolean; message?: string }>;
   register: (name: string, email: string, password: string, otp: string) => Promise<{ success: boolean; message?: string }>;
   getDiscordRedirectUrl: () => Promise<string | null>;
   setAuthSession: (token: string, user: AuthUser) => void;
@@ -126,6 +128,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const sendPasswordResetOtp = async (email: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/password/otp`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      return { success: data.success ?? res.ok, message: data.message || 'Nếu email hợp lệ, mã sẽ được gửi đến hộp thư.' };
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Lỗi gửi mã đặt lại mật khẩu.' };
+    }
+  };
+
+  const resetPassword = async (email: string, otp: string, password: string) => {
+    try {
+      const res = await fetch(`${API_BASE_URL}/auth/password/reset`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({ email, otp, password }),
+      });
+      const data = await res.json();
+      return { success: res.ok && data.success, message: data.message || 'Không thể đặt lại mật khẩu.' };
+    } catch (err: any) {
+      return { success: false, message: err.message || 'Lỗi kết nối máy chủ.' };
+    }
+  };
+
   // 3. Đăng ký tài khoản mới (Email + Password + OTP)
   const register = async (name: string, email: string, password: string, otp: string) => {
     try {
@@ -204,6 +234,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         closeAuthModal: () => setIsAuthModalOpen(false),
         login,
         sendOtp,
+        sendPasswordResetOtp,
+        resetPassword,
         register,
         getDiscordRedirectUrl,
         setAuthSession,
