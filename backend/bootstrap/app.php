@@ -12,7 +12,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->trustProxies(at: '*');
+        $trusted = env('TRUSTED_PROXIES');
+        $proxies = $trusted
+            ? array_filter(array_map('trim', explode(',', (string) $trusted)))
+            : ['127.0.0.1', '::1'];
+
+        $middleware->trustProxies(at: $proxies);
+        $middleware->prepend(\App\Http\Middleware\ResolveClientIp::class);
         $middleware->append(\App\Http\Middleware\SecurityAndDdosProtection::class);
         $middleware->redirectGuestsTo(fn () => null);
     })
