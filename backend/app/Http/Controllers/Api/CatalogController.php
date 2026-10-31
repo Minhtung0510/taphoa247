@@ -227,50 +227,11 @@ class CatalogController extends Controller
     }
 
     /**
-     * Cấu hình công khai của cửa hàng (Tên, Slogan, Hotline, Banner)
+     * Cấu hình công khai của cửa hàng (Tên, Slogan, Hotline, Mạng xã hội, Bảo trì)
      */
     public function settings(): JsonResponse
     {
         $settings = Cache::remember('store_settings_public', 300, function () {
-            $giftCode = Setting::get('banner_gift_code', 'TAPHOA247');
-            $customGiftText = Setting::get('banner_gift_discount_text', '');
-
-            // Tìm thông tin chi tiết của coupon trong database
-            $coupon = \App\Models\Coupon::where('code', $giftCode)->first();
-            $giftCouponData = null;
-            $finalGiftText = $customGiftText;
-
-            if ($coupon) {
-                $giftCouponData = [
-                    'id' => $coupon->id,
-                    'code' => $coupon->code,
-                    'description' => $coupon->description,
-                    'discount_type' => $coupon->discount_type,
-                    'discount_value' => (float) $coupon->discount_value,
-                    'max_discount_amount' => $coupon->max_discount_amount ? (int) $coupon->max_discount_amount : null,
-                    'min_order_amount' => (int) $coupon->min_order_amount,
-                    'is_active' => (bool) $coupon->is_active,
-                ];
-
-                // Nếu admin chưa đặt text hoặc text đang bị lệch lạc/mặc định cũ "Giảm 10%", tự động sinh text chuẩn 100% theo coupon
-                if (empty($finalGiftText) || $finalGiftText === 'Giảm 10% đơn hàng' || $finalGiftText === 'Giảm 10% toàn bộ đơn hàng') {
-                    if ($coupon->discount_type === 'percent') {
-                        $finalGiftText = "Giảm {$coupon->discount_value}%";
-                        if ($coupon->max_discount_amount) {
-                            $finalGiftText .= " (tối đa " . number_format($coupon->max_discount_amount, 0, ',', '.') . "đ)";
-                        }
-                    } else {
-                        $finalGiftText = "Giảm " . number_format($coupon->discount_value, 0, ',', '.') . "đ";
-                    }
-                    if ($coupon->min_order_amount > 0) {
-                        $finalGiftText .= " • Đơn từ " . number_format($coupon->min_order_amount, 0, ',', '.') . "đ";
-                    }
-                    if (!empty($coupon->description)) {
-                        $finalGiftText .= " - " . $coupon->description;
-                    }
-                }
-            }
-
             return [
                 'store_name' => Setting::get('store_name', 'Tạp Hóa 247'),
                 'store_slogan' => Setting::get('store_slogan', 'Shop Dịch Vụ Số & Acc Game Tự Động 24/7 Uy Tín #1'),
@@ -278,10 +239,6 @@ class CatalogController extends Controller
                 'store_telegram' => Setting::get('store_telegram', 'https://t.me/taphoa247_support'),
                 'store_facebook' => Setting::get('store_facebook', 'https://facebook.com/taphoa247'),
                 'banner_active' => (bool) Setting::get('banner_active', false),
-                'banner_text' => Setting::get('banner_text', 'Ưu đãi đặc biệt: Tặng bảo hiểm tài khoản 5 tiếng cho toàn bộ đơn hàng hôm nay!'),
-                'banner_gift_code' => $giftCode,
-                'banner_gift_discount_text' => $finalGiftText ?: 'Giảm giá cực sốc cho đơn hàng',
-                'banner_gift_coupon' => $giftCouponData,
                 'store_real_hearts' => (int) Setting::get('store_real_hearts', 0),
                 'store_maintenance_mode' => (bool) Setting::get('store_maintenance_mode', false),
             ];

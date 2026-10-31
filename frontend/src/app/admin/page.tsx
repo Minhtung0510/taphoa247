@@ -429,7 +429,12 @@ export default function AdminPage() {
           setSettingsData(json.data);
           if (typeof window !== 'undefined') {
             try {
-              localStorage.setItem('dtff_settings_data', JSON.stringify(json.data));
+              const cleanData = { ...json.data };
+              delete cleanData.banner_gift_code;
+              delete cleanData.banner_gift_coupon;
+              delete cleanData.banner_gift_discount_text;
+              delete cleanData.banner_text;
+              localStorage.setItem('dtff_settings_data', JSON.stringify(cleanData));
               localStorage.setItem('dtff_settings_sync', Date.now().toString());
             } catch {}
             window.dispatchEvent(new CustomEvent('dtff_settings_updated', { detail: json.data }));

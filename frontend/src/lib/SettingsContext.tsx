@@ -26,12 +26,19 @@ const defaultSettings: StoreSettings = {
   store_telegram: 'https://t.me/dtffshop',
   store_facebook: 'https://www.facebook.com/bill300213/',
   banner_active: false,
-  banner_text: 'Ưu đãi đặc biệt: Tặng bảo hiểm tài khoản 5 tiếng cho toàn bộ đơn hàng hôm nay!',
-  banner_gift_code: 'CHAOBANMOI',
-  banner_gift_discount_text: 'Giảm 100% (tối đa 50.000đ)',
   store_real_hearts: 86,
   store_maintenance_mode: false,
 };
+
+function sanitizeSettings(data: any): StoreSettings {
+  if (!data || typeof data !== 'object') return data;
+  const copy = { ...data };
+  delete copy.banner_gift_code;
+  delete copy.banner_gift_coupon;
+  delete copy.banner_gift_discount_text;
+  delete copy.banner_text;
+  return copy;
+}
 
 const SettingsContext = createContext<StoreSettings>(defaultSettings);
 
@@ -48,15 +55,21 @@ export function SettingsProvider({
     if (typeof window !== 'undefined') {
       try {
         const saved = localStorage.getItem('dtff_settings_data');
-        if (saved) return JSON.parse(saved);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          const sanitized = sanitizeSettings(parsed);
+          // Ghi đè lại để dọn sạch các trường nhạy cảm trong localStorage cũ của trình duyệt
+          localStorage.setItem('dtff_settings_data', JSON.stringify(sanitized));
+          return sanitized;
+        }
       } catch {}
     }
-    return initialSettings || defaultSettings;
+    return initialSettings ? sanitizeSettings(initialSettings) : defaultSettings;
   });
 
   useEffect(() => {
     if (initialSettings) {
-      setSettings((prev) => ({ ...prev, ...initialSettings }));
+      setSettings((prev) => ({ ...prev, ...sanitizeSettings(initialSettings) }));
     }
   }, [initialSettings]);
 
@@ -67,9 +80,10 @@ export function SettingsProvider({
         if (res.ok) {
           const json = await res.json();
           if (json?.data) {
-            setSettings(json.data);
+            const sanitized = sanitizeSettings(json.data);
+            setSettings(sanitized);
             try {
-              localStorage.setItem('dtff_settings_data', JSON.stringify(json.data));
+              localStorage.setItem('dtff_settings_data', JSON.stringify(sanitized));
             } catch {}
           }
         }
@@ -79,7 +93,7 @@ export function SettingsProvider({
     // 1. Lắng nghe cập nhật cùng tab (từ Admin form)
     const onLocalUpdated = (e: any) => {
       if (e.detail) {
-        setSettings((prev) => ({ ...prev, ...e.detail }));
+        setSettings((prev) => ({ ...prev, ...sanitizeSettings(e.detail) }));
       }
     };
 
@@ -87,7 +101,7 @@ export function SettingsProvider({
     const onStorageChange = (e: StorageEvent) => {
       if (e.key === 'dtff_settings_data' && e.newValue) {
         try {
-          setSettings(JSON.parse(e.newValue));
+          setSettings(sanitizeSettings(JSON.parse(e.newValue)));
         } catch {}
       } else if (e.key === 'dtff_settings_sync') {
         fetchLatestSettings();

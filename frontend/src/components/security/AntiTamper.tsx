@@ -13,7 +13,33 @@ export function AntiTamper() {
         'color: #ef4444; font-size: 13px; font-weight: 600;'
       );
 
-      // Giữ cảnh báo Self-XSS trong console, không can thiệp phím tắt của người dùng
+      // 2. Chặn các phím tắt mở DevTools cơ bản trên trình duyệt đối với khách vãng lai
+      const handleKeyDown = (e: KeyboardEvent) => {
+        // F12
+        if (e.key === 'F12') {
+          // Cho phép admin mở nếu đang giữ phím Alt+F12, còn lại chặn mặc định
+          if (!e.altKey) {
+            e.preventDefault();
+            return false;
+          }
+        }
+
+        // Ctrl+Shift+I / Ctrl+Shift+J / Ctrl+Shift+C / Ctrl+U
+        if (
+          (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+          (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
+        ) {
+          if (!e.altKey) {
+            e.preventDefault();
+            return false;
+          }
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+      };
     }
   }, []);
 

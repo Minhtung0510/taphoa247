@@ -83,7 +83,7 @@ class PreflightCheckCommand extends Command
         }
 
         // 10. PAYMENT_TEST_MODE
-        if (config('app.payment_test_mode') === true) {
+        if (filter_var(config('app.payment_test_mode') ?? env('PAYMENT_TEST_MODE', false), FILTER_VALIDATE_BOOLEAN) === true) {
             $errors[] = "PAYMENT_TEST_MODE đang là true. Cần chuyển về false trên production.";
         }
 
