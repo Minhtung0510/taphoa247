@@ -434,6 +434,9 @@ export default function AdminPage() {
               delete cleanData.banner_gift_coupon;
               delete cleanData.banner_gift_discount_text;
               delete cleanData.banner_text;
+              delete cleanData.banner_active;
+              delete cleanData.store_real_hearts;
+              delete cleanData.store_maintenance_mode;
               localStorage.setItem('dtff_settings_data', JSON.stringify(cleanData));
               localStorage.setItem('dtff_settings_sync', Date.now().toString());
             } catch {}

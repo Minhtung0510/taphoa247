@@ -238,9 +238,6 @@ class CatalogController extends Controller
                 'store_hotline' => Setting::get('store_hotline', '0937809305'),
                 'store_telegram' => Setting::get('store_telegram', 'https://t.me/taphoa247_support'),
                 'store_facebook' => Setting::get('store_facebook', 'https://facebook.com/taphoa247'),
-                'banner_active' => (bool) Setting::get('banner_active', false),
-                'store_real_hearts' => (int) Setting::get('store_real_hearts', 0),
-                'store_maintenance_mode' => (bool) Setting::get('store_maintenance_mode', false),
             ];
         });
 

@@ -25,9 +25,6 @@ const defaultSettings: StoreSettings = {
   store_zalo_group: 'https://zalo.me/g/ovxv2lnx8zvdw8f6q6qb',
   store_telegram: 'https://t.me/dtffshop',
   store_facebook: 'https://www.facebook.com/bill300213/',
-  banner_active: false,
-  store_real_hearts: 86,
-  store_maintenance_mode: false,
 };
 
 function sanitizeSettings(data: any): StoreSettings {
@@ -37,6 +34,9 @@ function sanitizeSettings(data: any): StoreSettings {
   delete copy.banner_gift_coupon;
   delete copy.banner_gift_discount_text;
   delete copy.banner_text;
+  delete copy.banner_active;
+  delete copy.store_real_hearts;
+  delete copy.store_maintenance_mode;
   return copy;
 }
 
