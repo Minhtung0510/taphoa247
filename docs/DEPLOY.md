@@ -225,3 +225,31 @@ docker compose up -d
 docker compose exec backend php artisan optimize:clear
 docker compose exec backend php artisan optimize
 ```
+
+---
+
+## 8. CẤU HÌNH PHP TRÊN WINDOWS (XỬ LÝ CHỨNG CHỈ CA & TLS)
+
+Khi hệ thống chạy trên máy Windows cục bộ (dùng làm server cùng Cloudflare Tunnel), PHP mặc định không kèm chứng chỉ gốc CA, dẫn đến lỗi `cURL error 60: SSL certificate: unable to get local issuer certificate` khi gọi HTTPS ra các dịch vụ ngoài (Discord OAuth, Telegram Alert, Webhook).
+
+### Các bước thiết lập chứng chỉ CA cho PHP trên Windows:
+1. **Tải file CA bundle chính thức**:
+   - Tải file từ curl.se: [https://curl.se/ca/cacert.pem](https://curl.se/ca/cacert.pem)
+   - Hoặc sao chép từ Git for Windows: `C:\Program Files\Git\usr\ssl\certs\ca-bundle.crt`
+2. **Lưu file chứng chỉ**:
+   - Đặt file tại đường dẫn: `C:\Program Files\Common Files\SSL\cert.pem`
+3. **Cập nhật `php.ini`**:
+   - Mở file `php.ini` (kiểm tra đường dẫn bằng lệnh `php --ini`).
+   - Tìm và cập nhật (bỏ dấu `;` ở đầu dòng nếu có):
+     ```ini
+     curl.cainfo = "C:\Program Files\Common Files\SSL\cert.pem"
+     openssl.cafile = "C:\Program Files\Common Files\SSL\cert.pem"
+     ```
+4. **Kiểm tra trạng thái TLS**:
+   - Chạy lệnh kiểm tra tự động của hệ thống:
+     ```bash
+     php artisan app:check-tls
+     ```
+   - Khi màn hình hiển thị `✅ OK: Chứng chỉ TLS/SSL hợp lệ`, hệ thống đã sẵn sàng kết nối HTTPS an toàn với xác thực TLS tuyệt đối.
+5. **Khởi động lại PHP server** để áp dụng thay đổi.
+

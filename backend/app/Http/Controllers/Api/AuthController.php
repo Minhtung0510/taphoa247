@@ -322,9 +322,7 @@ class AuthController extends Controller
         }
 
         try {
-            $response = Http::withOptions(['verify' => false])
-                ->withoutVerifying()
-                ->timeout(15)
+            $response = Http::timeout(15)
                 ->asForm()
                 ->post('https://discord.com/api/oauth2/token', [
                     'client_id' => $clientId,
@@ -353,9 +351,7 @@ class AuthController extends Controller
             }
 
             // Lấy thông tin user Discord
-            $userRes = Http::withOptions(['verify' => false])
-                ->withoutVerifying()
-                ->timeout(15)
+            $userRes = Http::timeout(15)
                 ->withToken($accessToken)
                 ->get('https://discord.com/api/users/@me');
             if ($userRes->failed()) {
