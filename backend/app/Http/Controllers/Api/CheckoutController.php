@@ -199,10 +199,17 @@ class CheckoutController extends Controller
 
         // 3. Yêu cầu xác thực tài khoản Admin hoặc truyền secret dev key
         $user = $request->user('sanctum') ?? auth('sanctum')->user();
-        $devSecret = $request->header('X-Dev-Secret') ?: $request->input('dev_secret');
-        $validDevSecret = env('APP_DEV_SECRET', 'dtff_dev_secret_test');
+        $devSecret = (string) ($request->header('X-Dev-Secret') ?: $request->input('dev_secret'));
+        $validDevSecret = env('APP_DEV_SECRET');
 
-        if ((!$user || !$user->isAdmin()) && (!hash_equals($validDevSecret, (string) $devSecret))) {
+        if (empty($validDevSecret)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tính năng giả lập thanh toán không khả dụng (chưa cấu hình dev secret).',
+            ], 404);
+        }
+
+        if ((!$user || !$user->isAdmin()) && (!hash_equals($validDevSecret, $devSecret))) {
             return response()->json([
                 'success' => false,
                 'message' => 'Bạn phải là Quản trị viên hoặc có mã Dev Secret hợp lệ để sử dụng tính năng thử nghiệm này.',
