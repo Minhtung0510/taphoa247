@@ -44,14 +44,6 @@ class AuthController extends Controller
 
         $email = strtolower(trim((string) $request->email));
 
-        // Kiểm tra email đã được đăng ký chưa
-        if (User::where('email', $email)->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Địa chỉ email này đã được sử dụng. Vui lòng chuyển sang tab Đăng nhập.',
-            ], 422);
-        }
-
         // Chống spam gửi OTP (giới hạn 60s / lần)
         $rateKey = 'otp_rate_' . md5($email . '|' . $request->ip());
         if (Cache::has($rateKey)) {
@@ -62,8 +54,19 @@ class AuthController extends Controller
             ], 429);
         }
 
+        // Chống lộ thông tin tài khoản (Email Enumeration):
+        // Luôn trả cùng một thông báo thành công, chỉ gửi email thật khi email chưa tồn tại.
+        if (User::where('email', $email)->exists()) {
+            Cache::put($rateKey, time() + 60, 60);
+            return response()->json([
+                'success' => true,
+                'message' => 'Mã xác thực OTP đã được gửi đến email của bạn nếu địa chỉ hợp lệ. Vui lòng kiểm tra hộp thư (hoặc mục Spam).',
+            ]);
+        }
+
         $code = sprintf('%06d', random_int(100000, 999999));
         Cache::put('otp_' . $email, $code, now()->addMinutes(10));
+        Cache::forget('otp_attempts_' . $email);
         Cache::put($rateKey, time() + 60, 60);
 
         try {
@@ -86,7 +89,7 @@ class AuthController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Mã xác thực OTP đã được gửi đến email của bạn. Vui lòng kiểm tra hộp thư (hoặc mục Spam).',
+                'message' => 'Mã xác thực OTP đã được gửi đến email của bạn nếu địa chỉ hợp lệ. Vui lòng kiểm tra hộp thư (hoặc mục Spam).',
             ]);
         } catch (\Throwable $e) {
             Log::error('[Mail OTP Error] Không thể gửi email: ' . $e->getMessage());
@@ -111,7 +114,7 @@ class AuthController extends Controller
                 'unique:users',
                 'regex:/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}$/',
             ],
-            'password' => 'required|string|min:6',
+            'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::defaults()],
             'otp' => 'required|string|size:6',
         ], [
             'name.required' => 'Vui lòng nhập họ và tên hoặc biệt danh.',
@@ -119,7 +122,6 @@ class AuthController extends Controller
             'email.regex' => 'Email không đúng định dạng. Email phải có đuôi tên miền hợp lệ (Ví dụ: tenban@gmail.com).',
             'email.unique' => 'Email này đã được đăng ký tài khoản.',
             'password.required' => 'Vui lòng nhập mật khẩu.',
-            'password.min' => 'Mật khẩu phải có ít nhất 6 ký tự.',
             'otp.required' => 'Vui lòng nhập mã OTP 6 số đã gửi về email.',
             'otp.size' => 'Mã OTP phải gồm 6 chữ số.',
         ]);
@@ -136,15 +138,33 @@ class AuthController extends Controller
         $cleanName = htmlspecialchars(strip_tags(trim($validated['name'])), ENT_QUOTES, 'UTF-8');
         $cleanEmail = strtolower(trim($validated['email']));
 
-        // Kiểm tra OTP hợp lệ
+        // Kiểm tra OTP hợp lệ và giới hạn số lần thử sai (5 lần thì hủy OTP)
         $cachedOtp = Cache::get('otp_' . $cleanEmail);
-        if (!$cachedOtp || $cachedOtp !== trim($request->otp)) {
+        $attemptsKey = 'otp_attempts_' . $cleanEmail;
+        $attempts = (int) Cache::get($attemptsKey, 0);
+
+        if (!$cachedOtp || !hash_equals((string) $cachedOtp, (string) trim($request->otp))) {
+            $attempts++;
+            Cache::put($attemptsKey, $attempts, now()->addMinutes(10));
+
+            if ($attempts >= 5) {
+                Cache::forget('otp_' . $cleanEmail);
+                Cache::forget($attemptsKey);
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Bạn đã nhập sai mã OTP quá 5 lần. Mã OTP đã bị hủy để đảm bảo an toàn, vui lòng yêu cầu gửi mã mới.',
+                ], 422);
+            }
+
+            $remaining = 5 - $attempts;
             return response()->json([
                 'success' => false,
-                'message' => 'Mã OTP không chính xác hoặc đã hết hạn. Vui lòng bấm gửi lại mã mới.',
+                'message' => "Mã OTP không chính xác hoặc đã hết hạn. Bạn còn {$remaining} lần thử trước khi mã bị hủy.",
             ], 422);
         }
+
         Cache::forget('otp_' . $cleanEmail);
+        Cache::forget($attemptsKey);
 
         $user = User::create([
             'name' => $cleanName,
@@ -197,14 +217,25 @@ class AuthController extends Controller
 
         $cleanEmail = strtolower(trim((string) $request->email));
         $throttleKey = Str::transliterate($cleanEmail . '|' . $request->ip());
+        $emailThrottleKey = 'login_email_lock_' . md5($cleanEmail);
 
-        // Kiểm tra số lần thử sai (Khóa 15 phút nếu sai quá 5 lần)
+        // 1. Kiểm tra khóa theo email + IP (5 lần sai / 15 phút)
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
             Log::warning("[Auth BruteForce Lockout] IP {$request->ip()} bị tạm khóa 15p do nhập sai 5 lần tài khoản {$cleanEmail}");
             return response()->json([
                 'success' => false,
-                'message' => "Bạn đã nhập sai mật khẩu quá 5 lần. Nhằm chống tấn công rà quét mật khẩu, hệ thống tạm khóa đăng nhập tài khoản này trong {$seconds} giây.",
+                'message' => "Bạn đã nhập sai mật khẩu quá 5 lần từ địa chỉ này. Hệ thống tạm khóa đăng nhập trong {$seconds} giây.",
+            ], 429)->header('Retry-After', (string) $seconds);
+        }
+
+        // 2. Kiểm tra khóa theo email (10 lần sai / 15 phút)
+        if (RateLimiter::tooManyAttempts($emailThrottleKey, 10)) {
+            $seconds = RateLimiter::availableIn($emailThrottleKey);
+            Log::warning("[Auth BruteForce Lockout] Tài khoản {$cleanEmail} bị tạm khóa do nhập sai 10 lần");
+            return response()->json([
+                'success' => false,
+                'message' => "Tài khoản này đã bị thử sai mật khẩu quá 10 lần. Nhằm bảo vệ an toàn tài khoản, hệ thống tạm khóa trong {$seconds} giây.",
             ], 429)->header('Retry-After', (string) $seconds);
         }
 
@@ -214,6 +245,7 @@ class AuthController extends Controller
 
         if (!$user || !$user->password || !Hash::check($request->password, $user->password)) {
             RateLimiter::hit($throttleKey, 900); // 15 phút
+            RateLimiter::hit($emailThrottleKey, 900); // 15 phút
             $remaining = RateLimiter::retriesLeft($throttleKey, 5);
             return response()->json([
                 'success' => false,
@@ -222,6 +254,7 @@ class AuthController extends Controller
         }
 
         RateLimiter::clear($throttleKey);
+        RateLimiter::clear($emailThrottleKey);
         $expiresAt = $user->isAdmin() ? now()->addHours(12) : null;
         $token = $user->createToken('auth_token', ['*'], $expiresAt)->plainTextToken;
 
