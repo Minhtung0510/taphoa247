@@ -42,6 +42,8 @@ return [
     'debug' => (bool) env('APP_DEBUG', false),
 
     'allow_mock_auth' => (bool) env('ALLOW_MOCK_AUTH', false),
+    'payment_test_mode' => (bool) env('PAYMENT_TEST_MODE', false),
+    'admin_initial_password' => (string) env('ADMIN_INITIAL_PASSWORD', ''),
 
     /*
     |--------------------------------------------------------------------------

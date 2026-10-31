@@ -32,21 +32,21 @@ class CheckoutService
         $couponCode = !empty($data['coupon_code']) ? strtoupper(trim($data['coupon_code'])) : null;
         $optionId = $data['option_id'] ?? null;
 
-        // Chống găm giữ kho (Anti-Stock Hoarding DoS): giới hạn tối đa 2 đơn pending chưa thanh toán
-        $pendingQuery = Order::where('status', 'pending')->where('expires_at', '>', now());
-        if ($userId) {
-            $pendingQuery->where('user_id', $userId);
-        } elseif (!empty($customerEmail)) {
-            $pendingQuery->where('customer_email', $customerEmail);
-        } else {
-            $pendingQuery = null;
-        }
-
-        if ($pendingQuery && $pendingQuery->count() >= 2) {
-            throw new InvalidArgumentException('Bạn đang có đơn hàng chờ thanh toán. Vui lòng hoàn tất thanh toán hoặc đợi đơn cũ hết hạn trước khi tạo đơn mới.');
-        }
-
         return DB::transaction(function () use ($productId, $quantity, $customerName, $customerEmail, $customerPhone, $userId, $couponCode, $optionId) {
+            // Chống găm giữ kho (Anti-Stock Hoarding DoS): giới hạn tối đa 2 đơn pending chưa thanh toán
+            $pendingQuery = Order::where('status', 'pending')->where('expires_at', '>', now());
+            if ($userId) {
+                $pendingQuery->where('user_id', $userId);
+            } elseif (!empty($customerEmail)) {
+                $pendingQuery->where('customer_email', $customerEmail);
+            } else {
+                $pendingQuery = null;
+            }
+
+            if ($pendingQuery && $pendingQuery->count() >= 2) {
+                throw new InvalidArgumentException('Bạn đang có đơn hàng chờ thanh toán. Vui lòng hoàn tất thanh toán hoặc đợi đơn cũ hết hạn trước khi tạo đơn mới.');
+            }
+
             $product = Product::where('id', $productId)->where('is_active', true)->first();
             if (!$product) {
                 throw new InvalidArgumentException('Sản phẩm không tồn tại hoặc đã ngừng kinh doanh.');
@@ -106,9 +106,9 @@ class CheckoutService
             $discountAmount = 0;
             $appliedCoupon = null;
 
-            // Xử lý mã giảm giá nếu có
+            // Xử lý mã giảm giá nếu có (dùng lockForUpdate chống race condition)
             if ($couponCode) {
-                $coupon = \App\Models\Coupon::where('code', $couponCode)->first();
+                $coupon = \App\Models\Coupon::where('code', $couponCode)->lockForUpdate()->first();
                 if ($coupon) {
                     [$valid, $discount, $msg] = $coupon->calculateDiscount($originalAmount);
                     if ($valid && $discount > 0) {

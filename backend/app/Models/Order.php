@@ -27,6 +27,7 @@ class Order extends Model
         'delivery_format',
         'paid_at',
         'expires_at',
+        'coupon_released_at',
     ];
 
     protected $casts = [
@@ -35,6 +36,7 @@ class Order extends Model
         'total_amount' => 'integer',
         'paid_at' => 'datetime',
         'expires_at' => 'datetime',
+        'coupon_released_at' => 'datetime',
     ];
 
     public function user()

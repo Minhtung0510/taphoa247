@@ -48,7 +48,18 @@ return [
     ],
 
     'device_gateway' => [
-        'secret' => env('DEVICE_GATEWAY_SECRET', 'DTFF_SECRET_TEST_2026'),
+        'secret' => env('DEVICE_GATEWAY_SECRET', ''),
+    ],
+
+    'app_dev_secret' => env('APP_DEV_SECRET', ''),
+
+    'digishop' => [
+        'gateway_key' => env('DIGISHOP_GATEWAY_KEY', env('SUPPLIER_GATEWAY_KEY', '')),
+        'reseller_key' => env('DIGISHOP_RESELLER_KEY', env('SUPPLIER_RESELLER_KEY', '')),
+    ],
+
+    'shopmmo' => [
+        'api_key' => env('SHOPMMO_API_KEY', ''),
     ],
 
     'discord' => [
@@ -59,3 +70,4 @@ return [
     ],
 
 ];
+

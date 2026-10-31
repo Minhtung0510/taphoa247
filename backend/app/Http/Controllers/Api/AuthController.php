@@ -111,7 +111,6 @@ class AuthController extends Controller
                 'required',
                 'string',
                 'max:150',
-                'unique:users',
                 'regex:/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,10}$/',
             ],
             'password' => ['required', 'string', \Illuminate\Validation\Rules\Password::defaults()],
@@ -120,7 +119,6 @@ class AuthController extends Controller
             'name.required' => 'Vui lòng nhập họ và tên hoặc biệt danh.',
             'email.required' => 'Vui lòng nhập địa chỉ email.',
             'email.regex' => 'Email không đúng định dạng. Email phải có đuôi tên miền hợp lệ (Ví dụ: tenban@gmail.com).',
-            'email.unique' => 'Email này đã được đăng ký tài khoản.',
             'password.required' => 'Vui lòng nhập mật khẩu.',
             'otp.required' => 'Vui lòng nhập mã OTP 6 số đã gửi về email.',
             'otp.size' => 'Mã OTP phải gồm 6 chữ số.',
@@ -139,6 +137,7 @@ class AuthController extends Controller
         $cleanEmail = strtolower(trim($validated['email']));
 
         // Kiểm tra OTP hợp lệ và giới hạn số lần thử sai (5 lần thì hủy OTP)
+        // Việc kiểm tra OTP TRƯỚC ngăn chặn triệt để tấn công Enumeration dò quét email đã đăng ký
         $cachedOtp = Cache::get('otp_' . $cleanEmail);
         $attemptsKey = 'otp_attempts_' . $cleanEmail;
         $attempts = (int) Cache::get($attemptsKey, 0);
@@ -160,6 +159,14 @@ class AuthController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => "Mã OTP không chính xác hoặc đã hết hạn. Bạn còn {$remaining} lần thử trước khi mã bị hủy.",
+            ], 422);
+        }
+
+        // Sau khi đã chứng minh quyền sở hữu email qua OTP, kiểm tra email trùng trong database
+        if (User::where('email', $cleanEmail)->exists()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Email này đã được đăng ký tài khoản. Vui lòng đăng nhập hoặc sử dụng tính năng quên mật khẩu.',
             ], 422);
         }
 
@@ -229,8 +236,14 @@ class AuthController extends Controller
             ], 429)->header('Retry-After', (string) $seconds);
         }
 
+        $user = User::where('email', $cleanEmail)
+            ->orWhere('email', $cleanEmail . '@taphoa247.io.vn')
+            ->first();
+
         // 2. Kiểm tra khóa theo email (10 lần sai / 15 phút)
-        if (RateLimiter::tooManyAttempts($emailThrottleKey, 10)) {
+        // Miễn trừ tài khoản Admin để chống tấn công từ chối dịch vụ (DoS Admin Lockout)
+        $isAdminAccount = $user && $user->isAdmin();
+        if (!$isAdminAccount && RateLimiter::tooManyAttempts($emailThrottleKey, 10)) {
             $seconds = RateLimiter::availableIn($emailThrottleKey);
             Log::warning("[Auth BruteForce Lockout] Tài khoản {$cleanEmail} bị tạm khóa do nhập sai 10 lần");
             return response()->json([
@@ -239,13 +252,11 @@ class AuthController extends Controller
             ], 429)->header('Retry-After', (string) $seconds);
         }
 
-        $user = User::where('email', $cleanEmail)
-            ->orWhere('email', $cleanEmail . '@taphoa247.io.vn')
-            ->first();
-
         if (!$user || !$user->password || !Hash::check($request->password, $user->password)) {
             RateLimiter::hit($throttleKey, 900); // 15 phút
-            RateLimiter::hit($emailThrottleKey, 900); // 15 phút
+            if (!$isAdminAccount) {
+                RateLimiter::hit($emailThrottleKey, 900); // 15 phút
+            }
             $remaining = RateLimiter::retriesLeft($throttleKey, 5);
             return response()->json([
                 'success' => false,

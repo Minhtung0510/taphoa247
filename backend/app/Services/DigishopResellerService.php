@@ -24,8 +24,8 @@ class DigishopResellerService
 
     public function __construct()
     {
-        $this->gatewayKey  = env('DIGISHOP_GATEWAY_KEY', '');
-        $this->resellerKey = env('DIGISHOP_RESELLER_KEY', '');
+        $this->gatewayKey  = (string) (config('services.digishop.gateway_key') ?: env('DIGISHOP_GATEWAY_KEY', env('SUPPLIER_GATEWAY_KEY', '')));
+        $this->resellerKey = (string) (config('services.digishop.reseller_key') ?: env('DIGISHOP_RESELLER_KEY', env('SUPPLIER_RESELLER_KEY', '')));
     }
 
     /**

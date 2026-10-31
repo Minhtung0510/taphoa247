@@ -80,4 +80,44 @@ class CouponRollbackOnTimeoutTest extends TestCase
         $this->assertEquals(1, $released);
         $this->assertEquals('timeout', $order->fresh()->status);
     }
+
+    /**
+     * S9: Ngăn chặn hoàn lượt 2 lần (double refund) khi đơn đã timeout và admin sau đó bấm reject.
+     */
+    public function test_coupon_cannot_be_refunded_twice_after_timeout_and_admin_cancel(): void
+    {
+        $admin = \App\Models\User::factory()->create(['role' => 'admin']);
+
+        $coupon = Coupon::factory()->create([
+            'code'        => 'DOUBLECHECK',
+            'is_active'   => true,
+            'usage_limit' => 10,
+            'used_count'  => 5,
+        ]);
+
+        $order = Order::factory()->create([
+            'status'      => 'pending',
+            'coupon_code' => 'DOUBLECHECK',
+            'expires_at'  => now()->subMinutes(1),
+        ]);
+
+        // 1. Scheduler/Service timeout đơn hàng: used_count giảm từ 5 -> 4
+        $service = app(OrderService::class);
+        $service->releaseExpiredOrders();
+
+        $freshOrder = $order->fresh();
+        $this->assertEquals(4, $coupon->fresh()->used_count);
+        $this->assertNotNull($freshOrder->coupon_released_at);
+
+        // 2. Admin sau đó thực hiện từ chối / hủy đơn qua API admin
+        $response = $this->actingAs($admin, 'sanctum')
+            ->postJson("/api/v1/admin/orders/{$freshOrder->order_code}/reject", [
+                'reason' => 'Đơn hết hạn cần dọn dẹp',
+            ]);
+
+        $response->assertOk();
+
+        // used_count vẫn phải là 4 (KHÔNG bị trừ tiếp thành 3)!
+        $this->assertEquals(4, $coupon->fresh()->used_count);
+    }
 }

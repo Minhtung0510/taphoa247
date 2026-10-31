@@ -155,6 +155,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const res = await fetch(`${API_BASE_URL}/auth/discord/redirect`);
       const data = await res.json();
       if (data.success && data.data?.auth_url) {
+        if (typeof window !== 'undefined' && data.data?.state) {
+          sessionStorage.setItem('discord_oauth_state', data.data.state);
+        }
         return data.data.auth_url as string;
       }
       return null;

@@ -228,6 +228,7 @@ class DeliveryController extends Controller
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src https://cdn.tailwindcss.com 'unsafe-inline'; style-src https://cdn.tailwindcss.com 'unsafe-inline'; img-src https://media.valorant-api.com data:; font-src data:; connect-src 'none';">
     <title>TẠP HÓA 247 - Tra Cứu Kho Acc #{$orderCodeSafe}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -241,7 +242,7 @@ class DeliveryController extends Controller
             <h1 class="text-xl sm:text-2xl font-black text-white">HỆ THỐNG TRA CỨU KHO TÀI KHOẢN GAME</h1>
             <p class="text-xs text-slate-400 mt-0.5">Mã đơn: <b class="text-white">#{$orderCodeSafe}</b> | Khách hàng: {$customerNameSafe}</p>
         </div>
-        <button onclick="window.print()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700">In / Lưu PDF</button>
+        <button id="btn-print-receipt" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700">In / Lưu PDF</button>
     </div>
 
     <div id="acc-list" class="space-y-8"></div>
@@ -414,6 +415,11 @@ class DeliveryController extends Controller
                         prompt('Sao chép tài khoản:', `\${u}:\${p}`);
                     });
                 });
+            }
+
+            const printBtn = document.getElementById('btn-print-receipt');
+            if (printBtn) {
+                printBtn.addEventListener('click', function() { window.print(); });
             }
         });
     </script>

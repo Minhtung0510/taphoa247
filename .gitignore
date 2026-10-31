@@ -54,3 +54,13 @@ Thumbs.db
 *.sql.gz
 *.pem
 *.key
+
+# Binaries, test results & scratch files
+*.exe
+Cloudflared
+Dang
+note.md
+example.html
+test-results/
+frontend/test-results/
+

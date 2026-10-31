@@ -488,11 +488,12 @@ class AdminController extends Controller
                 'reserved_at' => null,
             ]);
 
-        // Hoàn trả lượt sử dụng coupon nếu đơn có áp mã giảm giá
-        if (!empty($order->coupon_code)) {
+        // Hoàn trả lượt sử dụng coupon nếu đơn có áp mã giảm giá và CHƯA từng được hoàn
+        if (!empty($order->coupon_code) && $order->coupon_released_at === null) {
             Coupon::where('code', $order->coupon_code)
                 ->where('used_count', '>', 0)
                 ->decrement('used_count');
+            $order->coupon_released_at = now();
         }
 
         // Cập nhật trạng thái đơn thành cancelled

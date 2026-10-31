@@ -20,7 +20,7 @@ class ShopMmoService
 
     public function __construct()
     {
-        $this->apiKey = env('SHOPMMO_API_KEY', '');
+        $this->apiKey = (string) (config('services.shopmmo.api_key') ?: env('SHOPMMO_API_KEY', ''));
     }
 
     /**

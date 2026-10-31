@@ -34,7 +34,7 @@ class PreflightCheckCommand extends Command
         }
 
         // 4. DEVICE_GATEWAY_SECRET (S2 & P3)
-        $deviceSecret = env('DEVICE_GATEWAY_SECRET');
+        $deviceSecret = (string) config('services.device_gateway.secret');
         if (empty($deviceSecret)) {
             $errors[] = "DEVICE_GATEWAY_SECRET rỗng. Cần đặt chuỗi bí mật ngẫu nhiên dài (ít nhất 32 ký tự).";
         } elseif ($deviceSecret === 'DTFF_SECRET_TEST_2026') {
@@ -44,7 +44,7 @@ class PreflightCheckCommand extends Command
         }
 
         // 5. APP_DEV_SECRET
-        $appDevSecret = env('APP_DEV_SECRET');
+        $appDevSecret = (string) config('services.app_dev_secret');
         if (!empty($appDevSecret)) {
             if ($appDevSecret === 'dtff_dev_secret_test') {
                 $errors[] = "APP_DEV_SECRET đang dùng giá trị mặc định lộ trong repo ('dtff_dev_secret_test').";
@@ -54,8 +54,8 @@ class PreflightCheckCommand extends Command
         }
 
         // 6. ACCOUNT_NO / ACCOUNT_NAME
-        $accountNo = env('ACCOUNT_NO');
-        $accountName = env('ACCOUNT_NAME');
+        $accountNo = (string) config('services.sepay.account_no');
+        $accountName = (string) config('services.sepay.account_name');
         if (empty($accountNo)) {
             $errors[] = "ACCOUNT_NO (Số tài khoản nhận tiền) đang để trống.";
         }
@@ -64,8 +64,9 @@ class PreflightCheckCommand extends Command
         }
 
         // 7. CORS_ALLOWED_ORIGINS
-        $corsOrigins = env('CORS_ALLOWED_ORIGINS', '');
-        if (str_contains($corsOrigins, 'localhost') || str_contains($corsOrigins, '127.0.0.1')) {
+        $corsOrigins = config('cors.allowed_origins', []);
+        $corsOriginsStr = is_array($corsOrigins) ? implode(',', $corsOrigins) : (string) $corsOrigins;
+        if (str_contains($corsOriginsStr, 'localhost') || str_contains($corsOriginsStr, '127.0.0.1')) {
             $errors[] = "CORS_ALLOWED_ORIGINS đang chứa 'localhost' hoặc '127.0.0.1'. Trên production chỉ cho phép domain thật.";
         }
 
@@ -82,26 +83,26 @@ class PreflightCheckCommand extends Command
         }
 
         // 10. PAYMENT_TEST_MODE
-        if (filter_var(env('PAYMENT_TEST_MODE', false), FILTER_VALIDATE_BOOLEAN) === true) {
+        if (config('app.payment_test_mode') === true) {
             $errors[] = "PAYMENT_TEST_MODE đang là true. Cần chuyển về false trên production.";
         }
 
         // 11. ALLOW_MOCK_AUTH
-        if (filter_var(env('ALLOW_MOCK_AUTH', false), FILTER_VALIDATE_BOOLEAN) === true) {
+        if (config('app.allow_mock_auth') === true) {
             $errors[] = "ALLOW_MOCK_AUTH đang là true. Cần chuyển về false trên production.";
         }
 
         // 12. ADMIN_INITIAL_PASSWORD
-        $adminPass = env('ADMIN_INITIAL_PASSWORD', '');
+        $adminPass = (string) (config('app.admin_initial_password') ?: env('ADMIN_INITIAL_PASSWORD', ''));
         if (empty($adminPass)) {
             $warnings[] = "ADMIN_INITIAL_PASSWORD chưa được đặt. Seeder AdminUserSeeder sẽ thất bại khi chạy.";
         } elseif (strlen($adminPass) < 12) {
             $errors[] = "ADMIN_INITIAL_PASSWORD quá ngắn (" . strlen($adminPass) . " ký tự). Yêu cầu tối thiểu 12 ký tự.";
         }
 
-        // 13. SESSION_SECURE_COOKIE
+        // 13. SESSION_SECURE_COOKIE (Cảnh báo khuyến nghị, hệ thống chủ yếu dùng Bearer token)
         if (!config('session.secure', false)) {
-            $errors[] = "SESSION_SECURE_COOKIE chưa bật (session.secure = false). Trên HTTPS production bắt buộc phải là true để chống Cookie Hijacking.";
+            $warnings[] = "SESSION_SECURE_COOKIE chưa bật (session.secure = false). Nếu sử dụng web session cookies trên HTTPS, hãy đặt SESSION_SECURE_COOKIE=true.";
         }
 
         // Báo cáo kết quả

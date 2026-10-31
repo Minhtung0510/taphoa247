@@ -22,26 +22,14 @@ class SecurityAndDdosProtection
 
         $ip = $request->ip();
 
-        // 1. Chặn tấn công Path Traversal, SQL Injection & XSS độc hại
+        // 1. Chặn tấn công Path Traversal trên URI
         $uri = urldecode($request->getRequestUri());
-        $payloadRaw = strtolower($uri . ' ' . json_encode($request->except(['password', 'files'])));
-
-        $dangerousPatterns = [
-            '../', '..\\',
-            '<script', '%3cscript', 'javascript:', 'vbscript:', 'onload=', 'onerror=', 'document.cookie', '<iframe',
-            'union select', 'union  select', 'union/**/select', 'information_schema',
-            'benchmark(', 'sleep(', "' or 1=1", '" or 1=1', "' or '1'='1",
-            'drop table', 'exec(', 'xp_cmdshell',
-        ];
-
-        foreach ($dangerousPatterns as $pattern) {
-            if (str_contains($payloadRaw, $pattern)) {
-                Log::warning("[Security Shield] Chặn payload độc hại ({$pattern}) từ IP {$ip}: {$uri}");
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Yêu cầu bị từ chối do vi phạm quy tắc an toàn bảo mật (OWASP WAF Shield).',
-                ], 403);
-            }
+        if (str_contains($uri, '../') || str_contains($uri, '..\\')) {
+            Log::warning("[Security Shield] Chặn Path Traversal từ IP {$ip}: {$uri}");
+            return response()->json([
+                'success' => false,
+                'message' => 'Yêu cầu bị từ chối do đường dẫn không hợp lệ.',
+            ], 403);
         }
 
         // 2. Chặn Flood DDoS nhanh (Quá 80 requests trong vòng 10 giây từ 1 IP)

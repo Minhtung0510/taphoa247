@@ -29,5 +29,14 @@ class AppServiceProvider extends ServiceProvider
         Password::defaults(function () {
             return Password::min(8);
         });
+
+        // Đảm bảo các URL sinh ra (đặc biệt là URL ký tạm thời Signed URLs) dùng scheme https:// khi chạy sau Cloudflare Tunnel
+        if (
+            $this->app->environment('production') ||
+            request()->header('X-Forwarded-Proto') === 'https' ||
+            str_starts_with((string) config('app.url'), 'https://')
+        ) {
+            \Illuminate\Support\Facades\URL::forceScheme('https');
+        }
     }
 }

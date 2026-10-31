@@ -128,4 +128,69 @@ class OtpAndLoginSecurityTest extends TestCase
             ]);
         $resNewIp->assertStatus(401); // not 429 yet
     }
+
+    public function test_register_fails_with_otp_error_without_revealing_existing_email(): void
+    {
+        User::create([
+            'name' => 'Existing Person',
+            'email' => 'victim@example.com',
+            'password' => Hash::make('SecretPass123'),
+        ]);
+
+        // Attacker attempts to register with victim's email and bogus OTP
+        $response = $this->postJson('/api/v1/auth/register', [
+            'name' => 'Attacker',
+            'email' => 'victim@example.com',
+            'password' => 'AttackerPass123',
+            'otp' => '999999',
+        ]);
+
+        $response->assertStatus(422);
+        // Error message must mention OTP, NOT that email is already taken
+        $this->assertStringContainsString('OTP', $response->json('message'));
+        $this->assertStringNotContainsString('Email này đã được đăng ký', $response->json('message'));
+    }
+
+    public function test_admin_account_is_exempt_from_global_email_lockout_to_prevent_dos(): void
+    {
+        $admin = User::create([
+            'name' => 'Super Admin',
+            'email' => 'admin@taphoa247.pro',
+            'password' => Hash::make('AdminRealPassword123'),
+            'role' => 'admin',
+        ]);
+
+        // Attacker simulates 10 wrong attempts from multiple attacker IPs (5 from IP 10.0.0.1, 5 from IP 10.0.0.2)
+        for ($i = 1; $i <= 5; $i++) {
+            $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.1'])
+                ->postJson('/api/v1/auth/login', [
+                    'email' => 'admin@taphoa247.pro',
+                    'password' => 'attacker_pw',
+                ]);
+        }
+        for ($i = 1; $i <= 5; $i++) {
+            $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.2'])
+                ->postJson('/api/v1/auth/login', [
+                    'email' => 'admin@taphoa247.pro',
+                    'password' => 'attacker_pw',
+                ]);
+        }
+
+        // The attacker IPs are locked out
+        $resAttacker = $this->withServerVariables(['REMOTE_ADDR' => '10.0.0.1'])
+            ->postJson('/api/v1/auth/login', [
+                'email' => 'admin@taphoa247.pro',
+                'password' => 'AdminRealPassword123',
+            ]);
+        $resAttacker->assertStatus(429);
+
+        // But Admin from their legitimate office IP (1.2.3.4) can still log in successfully!
+        $resAdmin = $this->withServerVariables(['REMOTE_ADDR' => '1.2.3.4'])
+            ->postJson('/api/v1/auth/login', [
+                'email' => 'admin@taphoa247.pro',
+                'password' => 'AdminRealPassword123',
+            ]);
+        $resAdmin->assertOk();
+        $resAdmin->assertJsonPath('success', true);
+    }
 }

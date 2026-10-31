@@ -207,19 +207,23 @@ class OrderService
                         'reserved_at' => null,
                     ]);
 
-                // 2. Hoàn trả lượt sử dụng coupon (nếu đơn có áp mã giảm giá)
-                //    Dùng GREATEST(0, used_count - 1) để không bao giờ âm
-                if (!empty($order->coupon_code)) {
+                // 2. Hoàn trả lượt sử dụng coupon (nếu đơn có áp mã giảm giá và CHƯA từng được hoàn)
+                $releasedAt = null;
+                if (!empty($order->coupon_code) && $order->coupon_released_at === null) {
                     Coupon::where('code', $order->coupon_code)
                         ->where('used_count', '>', 0)
                         ->decrement('used_count');
+                    $releasedAt = now();
                 }
 
-                $order->update(['status' => 'timeout']);
+                $order->update([
+                    'status' => 'timeout',
+                    'coupon_released_at' => $releasedAt ?: $order->coupon_released_at,
+                ]);
                 $count++;
 
                 Log::info("[OrderService] Released expired order #{$order->order_code}" .
-                    (!empty($order->coupon_code) ? " (coupon {$order->coupon_code} refunded)" : ''));
+                    (!empty($order->coupon_code) && $releasedAt ? " (coupon {$order->coupon_code} refunded)" : ''));
             });
         }
 

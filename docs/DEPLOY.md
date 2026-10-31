@@ -106,7 +106,7 @@ Kết quả mong muốn: cả 5 container (`dtff_mysql`, `dtff_redis`, `dtff_bac
 # Chạy migration DB
 docker compose exec backend php artisan migrate --force
 
-# Seed tài khoản quản trị mặc định (admin@dtffshop.com / password123)
+# Seed tài khoản quản trị (mật khẩu lấy từ biến ADMIN_INITIAL_PASSWORD trong .env)
 docker compose exec backend php artisan db:seed --force
 
 # Import kho hàng từ các file TXT cũ của bot Discord

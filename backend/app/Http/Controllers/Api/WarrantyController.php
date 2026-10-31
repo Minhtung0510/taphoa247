@@ -115,13 +115,14 @@ class WarrantyController extends Controller
             'order_code' => 'required|exists:orders,order_code',
             'items' => 'required|string',
             'files' => 'nullable|array|max:10',
-            'files.*' => 'nullable|file|mimes:jpeg,jpg,png,webp,mp4,webm,mov|max:26214400', // 25MB max
+            'files.*' => 'nullable|file|mimes:jpeg,jpg,png,webp,mp4,webm,mov|max:25600', // 25MB max (25600 KB)
             'buyer_note' => 'nullable|string|max:1000',
         ], [
             'items.required' => 'Vui lòng chọn ít nhất 1 tài khoản cần bảo hành.',
             'order_code.required' => 'Mã đơn hàng không được để trống.',
             'order_code.exists' => 'Không tìm thấy đơn hàng tương ứng trong hệ thống.',
             'files.*.mimes' => 'Tệp đính kèm phải là ảnh (JPG, PNG, WEBP) hoặc video (MP4, WEBM, MOV).',
+            'files.*.max' => 'Dung lượng mỗi tệp đính kèm không được vượt quá 25MB.',
         ]);
 
         $order = Order::where('order_code', $request->order_code)->firstOrFail();

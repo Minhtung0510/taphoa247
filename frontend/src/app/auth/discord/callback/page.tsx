@@ -48,6 +48,22 @@ function DiscordCallbackContent() {
       return;
     }
 
+    // Chống tấn công CSRF / Account Hijacking: So khớp state nhận về từ Discord với state phiên trình duyệt đã lưu
+    const savedState = typeof window !== 'undefined' ? sessionStorage.getItem('discord_oauth_state') : null;
+    if (savedState && savedState !== state) {
+      if (typeof window !== 'undefined') {
+        sessionStorage.removeItem('discord_oauth_state');
+      }
+      setStatus('error');
+      setErrorMessage('Cảnh báo bảo mật: Mã phiên bảo mật (state) không khớp với phiên của trình duyệt này. Yêu cầu đăng nhập bị hủy để chống CSRF.');
+      return;
+    }
+
+    // Dọn dẹp state trong sessionStorage sau khi xác thực hợp lệ
+    if (typeof window !== 'undefined') {
+      sessionStorage.removeItem('discord_oauth_state');
+    }
+
     executedRef.current = true;
 
     // Gửi code lên Backend để xác thực (chỉ chạy 1 lần duy nhất)

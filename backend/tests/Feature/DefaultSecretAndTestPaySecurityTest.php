@@ -86,6 +86,7 @@ class DefaultSecretAndTestPaySecurityTest extends TestCase
         // Đặt ADMIN_INITIAL_PASSWORD ngắn → preflight phải báo lỗi về nó
         // (Các check khác như APP_ENV, SQLite cũng có thể fail, nhưng ta chỉ quan tâm output chứa chuỗi này)
         putenv('ADMIN_INITIAL_PASSWORD=short');
+        config(['app.admin_initial_password' => 'short']);
 
         $exitCode = Artisan::call('app:preflight');
         $output   = Artisan::output();

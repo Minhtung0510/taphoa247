@@ -25,7 +25,7 @@ netstat -ano | findstr ":8000" | findstr /i "LISTENING" >nul
 if %errorlevel% equ 0 goto BACKEND_RUNNING
 
 echo     ... Dang khoi dong Backend Laravel tren port 8000...
-start "TapHoa247_Backend" cmd /k "title TapHoa247_Backend && cd /d C:\Users\Administrator\Desktop\Test\backend && C:\Users\Administrator\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe artisan serve --host=0.0.0.0 --port=8000"
+start "TapHoa247_Backend" cmd /k "title TapHoa247_Backend && cd /d C:\Users\Administrator\Desktop\Test\backend && C:\Users\Administrator\AppData\Local\Microsoft\WinGet\Packages\PHP.PHP.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe\php.exe artisan serve --host=127.0.0.1 --port=8000"
 ping 127.0.0.1 -n 3 >nul
 goto BACKEND_DONE
 
