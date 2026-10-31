@@ -11,11 +11,15 @@ class Order extends Model
 
     protected $fillable = [
         'order_code',
+        'access_token',
         'user_id',
         'customer_name',
         'customer_email',
         'customer_phone',
         'memo',
+        'coupon_code',
+        'discount_amount',
+        'original_amount',
         'total_amount',
         'status',
         'payment_gateway',
@@ -26,6 +30,8 @@ class Order extends Model
     ];
 
     protected $casts = [
+        'discount_amount' => 'integer',
+        'original_amount' => 'integer',
         'total_amount' => 'integer',
         'paid_at' => 'datetime',
         'expires_at' => 'datetime',

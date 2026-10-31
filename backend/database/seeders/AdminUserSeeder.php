@@ -11,9 +11,9 @@ class AdminUserSeeder extends Seeder
     public function run(): void
     {
         User::updateOrCreate(
-            ['email' => 'admin@dtffshop.com'],
+            ['email' => 'admin@taphoa247.io.vn'],
             [
-                'name' => 'Administrator DTFF',
+                'name' => 'Administrator Tạp Hóa 247',
                 'password' => Hash::make('password123'),
                 'role' => 'admin',
             ]

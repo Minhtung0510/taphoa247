@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poster Tạp Hóa 247 - Tháng 10/2026 (Tùy chỉnh toàn bộ Logo)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --blue:#2563eb; --blue-d:#1e3a8a; --sky:#e8f3ff; --sky2:#c7e0ff;
+    --yellow:#fbbf24; --orange:#f97316; --red:#ef4444; --green:#16a34a;
+    --ink:#0f2a5c; --muted:#47628f;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  a{color:inherit;text-decoration:none}
+  body{
+    background:#8aa8d6;font-family:'Nunito',sans-serif;
+    display:flex;flex-direction:column;align-items:center;
+    padding:90px 24px 24px;min-height:100vh;gap:16px;
+  }
+
+  /* THANH CÔNG CỤ TẢI ẢNH & CHỌN TẤT CẢ LOGO */
+  .toolbar{
+    position:fixed;top:14px;z-index:999;
+    display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px;
+    background:rgba(15,42,92,.94);
+    padding:10px 14px;border-radius:18px;backdrop-filter:blur(8px);
+    box-shadow:0 10px 30px rgba(0,0,0,.38);border:2px solid rgba(255,255,255,.25);
+    max-width:1080px;
+  }
+  .toolbar-tip{
+    width:100%;text-align:center;color:#bfdbfe;font-size:12.5px;font-weight:800;margin-bottom:2px;
+  }
+  .toolbar-tip b{color:var(--yellow)}
+  .btn-tool{
+    cursor:pointer;border:none;outline:none;
+    font-family:'Nunito',sans-serif;font-weight:900;font-size:13px;
+    padding:8px 12px;border-radius:10px;display:flex;align-items:center;gap:6px;
+    transition:transform .15s, filter .15s;color:#fff;
+    background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);
+  }
+  .btn-tool.primary{
+    background:linear-gradient(135deg,#06b6d4,#a855f7);border:none;
+  }
+  .btn-tool.reset{
+    background:rgba(239,68,68,.25);border-color:rgba(239,68,68,.5);color:#fecaca;
+  }
+  .btn-dl{
+    background:linear-gradient(135deg,#fbbf24,#f97316);color:#fff;border:none;
+    font-size:14px;padding:9px 16px;
+    box-shadow:0 4px 14px rgba(249,115,22,.45);
+  }
+  .btn-tool:hover{transform:translateY(-2px);filter:brightness(1.1)}
+  .btn-tool:active{transform:translateY(0)}
+  .btn-tool:disabled{opacity:.65;cursor:wait}
+
+  /* HIỆU ỨNG BẤM ĐỔI LOGO TRỰC TIẾP TRÊN POSTER */
+  .editable-logo{
+    cursor:pointer;position:relative;overflow:hidden;
+    transition:transform .15s, box-shadow .15s;
+  }
+  .editable-logo:hover{
+    transform:scale(1.06);
+    box-shadow:0 0 0 3px var(--orange) !important;
+  }
+  .editable-logo img.custom-uploaded{
+    width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit;
+  }
+
+  /* KHUNG POSTER 1080x1440 */
+  .poster{
+    width:1080px;height:1440px;position:relative;overflow:hidden;color:var(--ink);
+    background:
+      radial-gradient(circle at 92% 4%, #ffffff 0, rgba(255,255,255,0) 30%),
+      radial-gradient(circle at 6% 96%, #bddbff 0, rgba(189,219,255,0) 36%),
+      linear-gradient(180deg,#ecf6ff 0%,#d2e6ff 100%);
+    padding:22px 38px 20px; display:flex; flex-direction:column; justify-content:space-between;
+    box-shadow:0 30px 80px rgba(15,42,92,.45); border-radius:28px;
+  }
+  .dot{position:absolute;border-radius:50%;background:rgba(255,255,255,.6);pointer-events:none}
+  .d1{width:260px;height:260px;top:-80px;left:-70px}
+  .d2{width:190px;height:190px;top:430px;right:-60px}
+  .d3{width:220px;height:220px;bottom:220px;left:-80px}
+  .z{position:relative;z-index:2}
+
+  /* WEBSITE BANNER (TOP CTA) */
+  .web{
+    display:flex;align-items:center;justify-content:space-between;gap:20px;
+    border-radius:28px;padding:15px 26px;color:#fff;
+    background:linear-gradient(115deg,#081945 0%,#1d4ed8 58%,#2563eb 100%);
+    border:4px solid var(--yellow);
+    box-shadow:0 14px 32px rgba(29,78,216,.42), 0 0 0 5px rgba(251,191,36,.28);
+  }
+  .web small{display:inline-block;background:rgba(251,191,36,.18);border:1px solid rgba(251,191,36,.5);padding:3px 12px;border-radius:999px;font-weight:900;font-size:13.5px;color:var(--yellow);letter-spacing:.4px;margin-bottom:2px}
+  .web .url{font-family:'Baloo 2';font-weight:800;font-size:66px;line-height:.98;letter-spacing:-1px;color:#fff;text-shadow:0 4px 0 rgba(0,0,0,.28)}
+  .web .url b{color:var(--yellow)}
+  .web .go{
+    flex:none;background:linear-gradient(180deg,#fde047,#fbbf24);color:#452700;
+    font-family:'Baloo 2';font-weight:800;font-size:25px;padding:13px 24px;
+    border-radius:20px;text-align:center;line-height:1.1;
+    box-shadow:0 7px 0 #d97706, 0 12px 20px rgba(0,0,0,.25);
+  }
+  .web .go span{display:block;font-family:'Nunito';font-size:13px;font-weight:900;color:#6b3e00;margin-top:3px}
+
+  /* TOP BAR & BRAND LOGO NEON */
+  .topbar{display:flex;justify-content:space-between;align-items:center}
+  .brand{display:flex;align-items:center;gap:15px}
+  .logo-box{
+    width:78px;height:78px;border-radius:22px;
+    background:#061224;
+    padding:3px;
+    background-image:linear-gradient(135deg,#00f2fe,#4facfe 45%,#f093fb 100%);
+    box-shadow:0 8px 22px rgba(15,42,92,.38), 0 0 0 3px #fff;
+    display:flex;align-items:center;justify-content:center;
+    overflow:hidden;flex:none;
+  }
+  .logo-inner{
+    width:100%;height:100%;border-radius:19px;background:#061224;
+    display:flex;align-items:center;justify-content:center;overflow:hidden;
+  }
+  .logo-inner img{
+    width:100%;height:100%;object-fit:cover;display:block;
+  }
+  .brand-name{font-family:'Baloo 2';font-weight:800;font-size:40px;line-height:.98;color:var(--blue-d)}
+  .brand-name b{
+    background:linear-gradient(90deg,#0284c7,#9333ea,#db2777);
+    -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  }
+  .brand-sub{font-size:14.5px;font-weight:800;color:var(--muted);margin-top:4px}
+  .month{
+    background:linear-gradient(135deg,#ef4444,#f97316);color:#fff;
+    font-family:'Baloo 2';font-weight:800;font-size:18.5px;
+    padding:10px 22px;border-radius:999px;
+    box-shadow:0 8px 18px rgba(239,68,68,.35);border:3px solid #fff;
+  }
+
+  /* HERO */
+  .hero{
+    background:#fff;border-radius:28px;padding:15px 28px 15px;text-align:center;
+    border:3px solid #fff;box-shadow:0 12px 30px rgba(37,99,235,.15);
+    position:relative;
+  }
+  .hero .tag{
+    display:inline-block;background:#fef3c7;color:#b45309;border:2px solid var(--yellow);
+    font-weight:900;font-size:14.5px;padding:5px 18px;border-radius:999px;margin-bottom:6px;
+  }
+  .hero h1{font-family:'Baloo 2';font-weight:800;font-size:48px;line-height:1.03;color:var(--blue-d);letter-spacing:-.5px}
+  .hero h1 span{color:var(--orange);text-decoration:underline;text-decoration-thickness:4px;text-underline-offset:4px}
+  .hero p{font-size:18.5px;font-weight:800;color:var(--muted);margin-top:6px}
+  .hero p b{color:#fff;background:var(--red);padding:2px 9px;border-radius:8px;font-weight:900}
+  .chips{display:flex;justify-content:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+  .chip{background:var(--sky);color:var(--blue-d);font-weight:900;font-size:14.5px;padding:6px 15px;border-radius:999px;border:2px solid var(--sky2)}
+
+  /* CARDS */
+  .card{
+    background:#fff;border-radius:26px;padding:15px 20px;
+    box-shadow:0 10px 26px rgba(37,99,235,.14);border:3px solid #fff;
+    position:relative;display:flex;flex-direction:column;
+  }
+  .card.hot{border:3.5px solid var(--orange);box-shadow:0 12px 30px rgba(249,115,22,.2)}
+  .badge{
+    position:absolute;top:-13px;right:18px;background:linear-gradient(135deg,#ef4444,#dc2626);
+    color:#fff;font-weight:900;font-size:13px;padding:5px 15px;border-radius:999px;
+    box-shadow:0 4px 10px rgba(239,68,68,.4);letter-spacing:.3px;
+  }
+  .c-head{display:flex;align-items:center;gap:12px}
+  .ico{
+    width:52px;height:52px;border-radius:16px;background:var(--sky);
+    display:flex;align-items:center;justify-content:center;flex:none;
+    border:2px solid var(--sky2);
+  }
+  .c-title{font-family:'Baloo 2';font-weight:800;font-size:24px;line-height:1.05;color:var(--blue-d)}
+  .c-sub{font-size:13.5px;font-weight:800;color:var(--muted);margin-top:2px}
+  
+  .price-row{display:flex;align-items:flex-end;gap:9px;margin:8px 0 8px}
+  .price{
+    font-family:'Baloo 2';font-weight:800;font-size:46px;line-height:.92;
+    color:var(--orange);text-shadow:0 3px 10px rgba(249,115,22,.22);
+  }
+  .price small{font-size:20px}
+  .from{
+    font-size:11.5px;font-weight:900;color:var(--blue-d);background:var(--sky2);
+    padding:3px 8px;border-radius:7px;align-self:center;
+  }
+  .old{font-size:14.5px;font-weight:800;color:#8aa0c8;text-decoration:line-through;padding-bottom:3px}
+  .save{
+    margin-left:auto;background:#dcfce7;color:var(--green);border:1.5px solid #86efac;
+    font-weight:900;font-size:13px;padding:4px 10px;border-radius:10px;align-self:center;
+  }
+  
+  .list{list-style:none;display:flex;flex-direction:column;gap:5.5px;flex:1}
+  .list li{font-size:14.5px;font-weight:700;color:#1e3a6d;line-height:1.28;padding-left:23px;position:relative}
+  .list li b{color:var(--blue-d);font-weight:900;background:#eef6ff;padding:0 4px;border-radius:4px}
+  .list li::before{
+    content:"✓";position:absolute;left:0;top:1px;width:17px;height:17px;
+    border-radius:50%;background:var(--green);color:#fff;font-size:11px;font-weight:900;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .warranty{
+    margin-top:10px;background:linear-gradient(90deg,#e0f0ff,#dbeafe);
+    color:var(--blue-d);font-weight:900;font-size:13.5px;padding:8px 12px;
+    border-radius:12px;text-align:center;border:1.5px solid var(--sky2);
+  }
+
+  /* WIDE NFA CARD */
+  .nfa-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:10px}
+  .sub{
+    background:linear-gradient(180deg,#f5faff,#ebf4ff);border-radius:20px;
+    padding:13px 16px;display:flex;flex-direction:column;border:2px solid var(--sky2);
+  }
+  .sub-top{display:flex;align-items:center;gap:10px}
+  .game-tag{
+    width:42px;height:42px;border-radius:12px;display:flex;align-items:center;
+    justify-content:center;font-family:'Baloo 2';font-weight:800;font-size:15px;color:#fff;flex:none;
+  }
+  .sub h4{font-family:'Baloo 2';font-weight:800;font-size:21px;color:var(--blue-d);line-height:1.05}
+  .sub h4 small{display:block;font-size:12.5px;font-weight:800;color:var(--muted);font-family:'Nunito';margin-top:2px}
+  .sub .price-row{margin:7px 0 7px}
+  .sub .price{font-size:42px}
+
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+
+  /* CONTACT & 3 QR CODES */
+  .contact{
+    background:#fff;border-radius:28px;padding:15px 22px;
+    display:flex;gap:18px;align-items:center;
+    box-shadow:0 12px 30px rgba(37,99,235,.18);border:3px solid #fff;
+  }
+  .c-left{flex:1;min-width:0}
+  .phone{
+    display:flex;align-items:center;gap:12px;
+    background:linear-gradient(135deg,#1e40af,#2563eb);color:#fff;
+    border-radius:18px;padding:9px 16px;
+    box-shadow:0 6px 16px rgba(37,99,235,.3);
+  }
+  .phone .pi{font-size:28px}
+  .phone small{display:block;font-size:11.5px;font-weight:900;color:#bfdbfe;letter-spacing:.5px}
+  .phone strong{font-family:'Baloo 2';font-size:36px;line-height:1;font-weight:800;letter-spacing:1px;color:var(--yellow)}
+  
+  .links{display:flex;flex-direction:column;gap:6px;margin-top:8px;font-size:14px;font-weight:800}
+  .links a{display:block;background:var(--sky);color:var(--blue-d);border-radius:10px;padding:7px 12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:1.5px solid var(--sky2)}
+  .links b{color:var(--orange)}
+  
+  .qrs{display:flex;gap:10px;flex:none}
+  .qr{
+    background:var(--sky);border-radius:16px;padding:8px;text-align:center;
+    color:var(--blue-d);border:2px solid var(--sky2);width:122px;
+  }
+  .qr.qr-web{
+    background:linear-gradient(180deg,#fff7ed,#ffedd5);
+    border:2.5px solid var(--orange);color:#9a3412;
+  }
+  .qr .q{width:102px;height:102px;background:#fff;border-radius:10px;padding:5px;margin:0 auto}
+  .qr .q img,.qr .q canvas{width:92px!important;height:92px!important}
+  .qr p{font-size:11.5px;font-weight:900;margin-top:5px;line-height:1.15}
+
+  .slogan{text-align:center;font-weight:900;font-size:14.5px;color:var(--blue-d)}
+</style>
+</head>
+<body>
+
+<!-- THANH CÔNG CỤ CHỌN LOGO CHO TỪNG MỤC & TẢI ẢNH -->
+<div class="toolbar">
+  <div class="toolbar-tip">💡 <b>Mẹo nhanh:</b> Bạn có thể bấm trực tiếp vào bất kỳ ô Logo/Icon nào trên Poster hoặc dùng các nút bên dưới để đổi ảnh!</div>
+  <input type="file" id="universal-logo-input" accept="image/*" style="display:none" onchange="handleUniversalUpload(event)">
+  
+  <button class="btn-tool primary" onclick="triggerUpload('slot-brand')">🖼️ Logo Shop</button>
+  <button class="btn-tool" onclick="triggerUpload('slot-nfa')">🎮 Icon NFA</button>
+  <button class="btn-tool" onclick="triggerUpload('slot-cs2')">🔫 Logo CS2</button>
+  <button class="btn-tool" onclick="triggerUpload('slot-val')">🎯 Logo Valorant</button>
+  <button class="btn-tool" onclick="triggerUpload('slot-cursor')">🤖 Logo Cursor AI</button>
+  <button class="btn-tool" onclick="triggerUpload('slot-api')">⚡ Logo API/Google</button>
+  <button class="btn-tool reset" onclick="resetAllLogos()" title="Khôi phục lại các icon mặc định">🔄 Reset Icon</button>
+  
+  <button class="btn-tool btn-dl" id="btn-export" onclick="exportPoster()">
+    📸 Tải Poster PNG (2x)
+  </button>
+</div>
+
+<div class="poster" id="capture-poster">
+  <div class="dot d1"></div><div class="dot d2"></div><div class="dot d3"></div>
+
+  <!-- 1. WEBSITE BANNER -->
+  <a class="web z" href="https://taphoa247.io.vn" target="_blank" rel="noopener">
+    <div>
+      <small>⚡ HỆ THỐNG MUA BÁN TỰ ĐỘNG 24/7 — KHÔNG CẦN CHỜ ADMIN</small>
+      <div class="url">taphoa247<b>.io.vn</b></div>
+    </div>
+    <div class="go">VÀO WEB NGAY ➜<span>Quét VietQR • Nhận hàng 3 giây</span></div>
+  </a>
+
+  <!-- 2. TOP BAR (LOGO SHOP) -->
+  <div class="topbar z">
+    <div class="brand">
+      <div class="logo-box editable-logo" onclick="triggerUpload('slot-brand')" title="Bấm để thay Logo Tạp Hóa 247">
+        <div class="logo-inner" id="slot-brand">
+          <img alt="Tạp Hóa 247 Logo" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><defs><linearGradient id='g1' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%2300f2fe'/><stop offset='100%' stop-color='%23ec4899'/></linearGradient><linearGradient id='g2' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' stop-color='%2338bdf8'/><stop offset='100%' stop-color='%23e879f9'/></linearGradient></defs><rect width='200' height='200' fill='%23061224'/><circle cx='100' cy='102' r='78' fill='none' stroke='url(%23g1)' stroke-width='5'/><path d='M70 50 C70 38,130 38,130 50 L138 76 C140 86,128 92,120 84 L112 76 L88 76 L80 84 C72 92,60 86,62 76 Z' fill='%231e1b4b' stroke='url(%23g1)' stroke-width='4'/><text x='100' y='115' text-anchor='middle' font-family='Arial,sans-serif' font-weight='900' font-size='28' fill='%23fef08a'>TẠP HÓA</text><text x='100' y='162' text-anchor='middle' font-family='Arial,sans-serif' font-weight='900' font-size='52' fill='url(%23g2)'>247</text><text x='100' y='184' text-anchor='middle' font-family='Arial,sans-serif' font-weight='800' font-size='13' fill='%23ffffff'>TÀI KHOẢN AI %26 GAME</text></svg>">
+        </div>
+      </div>
+      <div>
+        <div class="brand-name">TẠP HÓA <b>247</b></div>
+        <div class="brand-sub">Tài Khoản AI &amp; Game Chính Hãng • Giao Tự Động 24/7</div>
+      </div>
+    </div>
+    <div class="month">🔥 BẢNG GIÁ THÁNG 10/2026</div>
+  </div>
+
+  <!-- 3. HERO -->
+  <div class="hero z">
+    <div class="tag">⏰ Giá sập sàn số lượng có hạn – Vào web chốt đơn ngay!</div>
+    <h1>ACC GAME &amp; AI <span>GIÁ SỐC</span><br>TIẾT KIỆM ĐẾN 93%</h1>
+    <p>Thanh toán VietQR • Nhận acc sau <b>3 GIÂY</b> • Lỗi là <b>1 ĐỔI 1 NGAY</b></p>
+    <div class="chips">
+      <span class="chip">📦 Kho sẵn 1.000+ Acc</span>
+      <span class="chip">⚡ Mua tự động không cần chờ</span>
+      <span class="chip">🛡️ Bảo hành uy tín 24/7</span>
+    </div>
+  </div>
+
+  <!-- 4. NFA GAME ACCOUNTS (CS2 + VALORANT) -->
+  <div class="card hot z">
+    <div class="badge">🔥 BÁN CHẠY SỐ #1</div>
+    <div class="c-head">
+      <div class="ico editable-logo" id="slot-nfa" onclick="triggerUpload('slot-nfa')" title="Bấm để đổi Icon TÀI KHOẢN GAME NFA" style="background:#fff0e6;border-color:#fed7aa">
+        <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4m-2-2v4"/><circle cx="15" cy="11" r="1" fill="#ea580c"/><circle cx="17" cy="13" r="1" fill="#ea580c"/></svg>
+      </div>
+      <div>
+        <div class="c-title">TÀI KHOẢN GAME NFA (CS2 &amp; VALORANT)</div>
+        <div class="c-sub">Acc sạch 100%, mua xong vào bắn ngay • Tự động đổi nick mới nếu lỗi</div>
+      </div>
+    </div>
+    <div class="nfa-grid">
+      <!-- CS2 -->
+      <div class="sub">
+        <div class="sub-top">
+          <div class="game-tag editable-logo" id="slot-cs2" onclick="triggerUpload('slot-cs2')" title="Bấm để đổi Logo CS2" style="background:linear-gradient(135deg,#f59e0b,#d97706)">CS2</div>
+          <h4>CS2 Prime <small>Steam Prime • Bắn Premier &amp; Comp</small></h4>
+        </div>
+        <div class="price-row">
+          <div class="price">29<small>.000đ</small></div>
+          <div class="old">385.000đ</div>
+          <div class="save">Tiết kiệm 92%</div>
+        </div>
+        <ul class="list">
+          <li>Vào game <b>1 chạm bằng SteamLoader</b>, không cần gõ mật khẩu</li>
+          <li>Cam kết <b>Acc sạch 100%</b> (Không VAC / Không Game Ban)</li>
+          <li>Nhận Key kích hoạt tự động ngay sau 3 giây</li>
+        </ul>
+      </div>
+      <!-- VALORANT -->
+      <div class="sub">
+        <div class="sub-top">
+          <div class="game-tag editable-logo" id="slot-val" onclick="triggerUpload('slot-val')" title="Bấm để đổi Logo Valorant" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">VAL</div>
+          <h4>Valorant Rank <small>Có sẵn Rank • Nhiều Skin súng đẹp</small></h4>
+        </div>
+        <div class="price-row">
+          <div class="from">CHỈ TỪ</div>
+          <div class="price">15<small>.000đ</small></div>
+          <div class="save">Sẵn 300+ Acc</div>
+        </div>
+        <ul class="list">
+          <li>Bảo hiểm <b>chủ Off 5 tiếng</b>, leo rank thoải mái không bị đè</li>
+          <li>Xem trước <b>Rank &amp; Kho Skin</b> trực tiếp trên Website</li>
+          <li>Sai mật khẩu hoặc bị khóa? <b>Web tự đổi nick mới</b></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. AI & CREDITS -->
+  <div class="grid2 z">
+    <div class="card">
+      <div class="badge" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)">DÂN CODE SĂN ĐÓN</div>
+      <div class="c-head">
+        <div class="ico editable-logo" id="slot-cursor" onclick="triggerUpload('slot-cursor')" title="Bấm để đổi Logo Cursor AI">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14" y1="4" x2="10" y2="20"/></svg>
+        </div>
+        <div>
+          <div class="c-title">Cursor AI Pro</div>
+          <div class="c-sub">Trợ lý viết Code AI mạnh nhất hiện nay</div>
+        </div>
+      </div>
+      <div class="price-row">
+        <div class="price">35<small>.000đ</small></div>
+        <div class="old">500.000đ</div>
+        <div class="save">-93%</div>
+      </div>
+      <ul class="list">
+        <li>Kích hoạt 1 chạm qua Extension, <b>không cần thẻ Visa</b></li>
+        <li>Linh hoạt: <b>Gói Ngày</b> (400 chat) &amp; <b>VIP Pool 30 ngày</b></li>
+        <li>Full model <b>Claude Sonnet / GPT</b> tốc độ cao, không nghẽn</li>
+      </ul>
+      <div class="warranty">🛡️ Bảo hành 1 đổi 1 trọn thời gian gói</div>
+    </div>
+
+    <div class="card">
+      <div class="badge" style="background:linear-gradient(135deg,#16a34a,#15803d)">KHÔNG LO HẾT HẠN</div>
+      <div class="c-head">
+        <div class="ico editable-logo" id="slot-api" onclick="triggerUpload('slot-api')" title="Bấm để đổi Logo API Credits" style="background:#ecfdf5;border-color:#a7f3d0">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        </div>
+        <div>
+          <div class="c-title">API Credits &amp; Google 5TB</div>
+          <div class="c-sub">Claude • OpenAI Codex • DeepSeek</div>
+        </div>
+      </div>
+      <div class="price-row">
+        <div class="from">GÓI $20</div>
+        <div class="price">22<small>.000đ</small></div>
+        <div class="save">Rẻ gấp 20 lần</div>
+      </div>
+      <ul class="list">
+        <li><b>Không trừ tiền hàng tháng</b>, dùng bao nhiêu trừ bấy nhiêu</li>
+        <li>Đủ mệnh giá từ <b>$20 (22k)</b> đến <b>$1.000 (1.090k)</b></li>
+        <li>Kèm: <b>Google One 5TB</b> • Acc Discord &amp; Token từ <b>3.000đ</b></li>
+      </ul>
+      <div class="warranty">🛡️ Mã nạp dùng vĩnh viễn tới khi hết Credit</div>
+    </div>
+  </div>
+
+  <!-- 6. CONTACT & 3 QR CODES -->
+  <div class="contact z">
+    <div class="c-left">
+      <div class="phone">
+        <div class="pi">📞</div>
+        <div>
+          <small>HOTLINE / ZALO HỖ TRỢ TRỰC TIẾP</small>
+          <strong>0937 809 305</strong>
+        </div>
+      </div>
+      <div class="links">
+        <a href="https://zalo.me/g/ovxv2lnx8zvdw8f6q6qb" target="_blank" rel="noopener">💬 <b>Cộng đồng Zalo:</b> zalo.me/g/ovxv2lnx8zvdw8f6q6qb</a>
+        <a href="https://www.facebook.com/bill300213/" target="_blank" rel="noopener">📘 <b>Facebook Admin:</b> facebook.com/bill300213</a>
+      </div>
+    </div>
+    <div class="qrs">
+      <div class="qr qr-web">
+        <div class="q" id="qr-web"></div>
+        <p>🌐 Quét vào<br><b>Web Mua Hàng</b></p>
+      </div>
+      <div class="qr">
+        <div class="q" id="qr-zalo"></div>
+        <p>💬 Quét vào<br><b>Nhóm Zalo</b></p>
+      </div>
+      <div class="qr">
+        <div class="q" id="qr-fb"></div>
+        <p>📘 Quét vào<br><b>Facebook</b></p>
+      </div>
+    </div>
+  </div>
+
+  <div class="slogan z">💙 Uy tín tạo nên thương hiệu – Cảm ơn hàng ngàn anh em đã tin tưởng ủng hộ! 💙</div>
+</div>
+
+<script>
+  // Tạo 3 mã QR
+  function mk(id, text, color){
+    try{
+      new QRCode(document.getElementById(id), {
+        text: text,
+        width: 220,
+        height: 220,
+        colorDark: color || "#0f2a5c",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    }catch(e){}
+  }
+  mk('qr-web', 'https://taphoa247.io.vn', '#c2410c');
+  mk('qr-zalo', 'https://zalo.me/g/ovxv2lnx8zvdw8f6q6qb', '#0f2a5c');
+  mk('qr-fb', 'https://www.facebook.com/bill300213/', '#0f2a5c');
+
+  // Lưu trữ nội dung mặc định của 6 ô logo để có thể Reset bất cứ lúc nào
+  const SLOTS = ['slot-brand', 'slot-nfa', 'slot-cs2', 'slot-val', 'slot-cursor', 'slot-api'];
+  const defaultHTML = {};
+  const defaultStyle = {};
+  let currentSlotId = null;
+
+  window.addEventListener('DOMContentLoaded', () => {
+    SLOTS.forEach(slotId => {
+      const el = document.getElementById(slotId);
+      if (el) {
+        defaultHTML[slotId] = el.innerHTML;
+        defaultStyle[slotId] = el.getAttribute('style') || '';
+        // Khôi phục ảnh đã lưu trong localStorage nếu có
+        const savedDataUrl = localStorage.getItem('taphoa247_' + slotId);
+        if (savedDataUrl) {
+          applyImageToSlot(slotId, savedDataUrl);
+        }
+      }
+    });
+  });
+
+  // Mở hộp thoại chọn file cho đúng vị trí được bấm
+  function triggerUpload(slotId) {
+    currentSlotId = slotId;
+    const input = document.getElementById('universal-logo-input');
+    input.value = '';
+    input.click();
+  }
+
+  // Hiển thị ảnh vào ô logo và căn vừa khít
+  function applyImageToSlot(slotId, dataUrl) {
+    const el = document.getElementById(slotId);
+    if (!el) return;
+    el.innerHTML = `<img class="custom-uploaded" src="${dataUrl}" alt="${slotId}">`;
+    if (slotId !== 'slot-brand') {
+      el.style.padding = '0';
+      el.style.background = '#ffffff';
+    }
+  }
+
+  // Xử lý khi người dùng chọn ảnh từ máy
+  function handleUniversalUpload(event) {
+    const file = event.target.files[0];
+    if (!file || !currentSlotId) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const dataUrl = e.target.result;
+      applyImageToSlot(currentSlotId, dataUrl);
+      try {
+        localStorage.setItem('taphoa247_' + currentSlotId, dataUrl);
+      } catch (err) {}
+    };
+    reader.readAsDataURL(file);
+  }
+
+  // Khôi phục toàn bộ icon mặc định
+  function resetAllLogos() {
+    SLOTS.forEach(slotId => {
+      const el = document.getElementById(slotId);
+      if (el && defaultHTML[slotId] !== undefined) {
+        el.innerHTML = defaultHTML[slotId];
+        el.setAttribute('style', defaultStyle[slotId]);
+      }
+      try {
+        localStorage.removeItem('taphoa247_' + slotId);
+      } catch (err) {}
+    });
+  }
+
+  // Xuất Poster ra file PNG 2x (2160x2880px)
+  async function exportPoster() {
+    const btn = document.getElementById('btn-export');
+    const poster = document.getElementById('capture-poster');
+    const originalText = btn.innerHTML;
+
+    try {
+      btn.disabled = true;
+      btn.innerHTML = '⏳ Đang xử lý ảnh 2x...';
+
+      if (document.fonts && document.fonts.ready) {
+        await document.fonts.ready;
+      }
+
+      const canvas = await html2canvas(poster, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: null,
+        width: 1080,
+        height: 1440,
+        windowWidth: 1200,
+        windowHeight: 1600
+      });
+
+      const link = document.createElement('a');
+      link.download = 'Poster-TapHoa247-10-2026.png';
+      link.href = canvas.toDataURL('image/png', 1.0);
+      link.click();
+
+      btn.innerHTML = '✅ Đã tải thành công!';
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+      }, 2200);
+    } catch (err) {
+      alert('Có lỗi khi xuất ảnh: ' + err.message);
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>

@@ -10,7 +10,7 @@
 | Hạng mục kiểm tra | Tiêu chuẩn kỹ thuật | Trạng thái | Đánh giá chi tiết |
 | :--- | :--- | :---: | :--- |
 | **Meta Title** | 50 – 60 ký tự, chứa từ khóa chính, branding cuối | ✅ **ĐẠT** | Tự động sinh qua `generateMetadata`: Title trang chủ (59 ký tự), trang danh mục (42–52 ký tự), trang sản phẩm (50–58 ký tự). |
-| **Meta Description** | 140 – 160 ký tự, hấp dẫn, có CTA | ✅ **ĐẠT** | Mô tả súc tích, bao hàm từ khóa *"tự động 24/7"*, *"VietQR MBBank"*, *"bảo hành 1 đổi 1"*, độ dài 145–158 ký tự. |
+| **Meta Description** | 140 – 160 ký tự, hấp dẫn, có CTA | ✅ **ĐẠT** | Mô tả súc tích, bao hàm từ khóa *"tự động 24/7"*, *"VietQR TPBank"*, *"bảo hành 1 đổi 1"*, độ dài 145–158 ký tự. |
 | **Thẻ Heading Hierarchy** | Đúng 1 thẻ `<h1>` duy nhất/trang, phân cấp `<h2>`, `<h3>` chuẩn | ✅ **ĐẠT** | Trang chủ 1 H1 ("Shop Bán Acc Game Tự Động 24/7 Uy Tín #1"), danh mục 1 H1 ("Kho Tài Khoản..."), sản phẩm 1 H1 (tên sản phẩm). |
 | **Canonical URL** | Thẻ canonical chính xác, ngăn duplicate | ✅ **ĐẠT** | Định danh `alternates.canonical` trỏ về domain chính `https://dtffshop.com/...`. |
 | **Open Graph & Twitter** | Xem trước đầy đủ trên Facebook, Zalo, Twitter/X | ✅ **ĐẠT** | Đã cấu hình `og:title`, `og:description`, `og:image`, `og:locale='vi_VN'`, `twitter:card='summary_large_image'`. |

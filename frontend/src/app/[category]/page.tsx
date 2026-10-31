@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { fetchCategories, fetchCategoryWithProducts } from '@/lib/api';
 import { JsonLd } from '@/components/seo/JsonLd';
+import { ProductCard } from '@/components/product/ProductCard';
 
 interface Props {
   params: Promise<{ category: string }>;
@@ -16,24 +17,24 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!data) {
     return {
       title: 'Danh Mục Game Không Tồn Tại',
-      description: 'Không tìm thấy danh mục game yêu cầu tại DTFF SHOP.',
+      description: 'Không tìm thấy danh mục game yêu cầu tại Tạp Hóa 247.',
     };
   }
 
   const { category } = data;
   const title = `Mua Acc ${category.name} Tự Động Giá Rẻ 24/7`;
-  const description = `Shop bán tài khoản ${category.name} tự động 24/7 qua VietQR MBBank. Nhận acc sau 3s, bảo hành 1 đổi 1 tức thì, tài khoản sạch bao ban.`;
+  const description = `Shop bán tài khoản ${category.name} tự động 24/7 qua VietQR TPBank. Nhận acc sau 3s, bảo hành 1 đổi 1 tức thì, tài khoản sạch bao ban.`;
 
   return {
     title,
     description,
     alternates: {
-      canonical: `https://dtffshop.com/${category.slug}`,
+      canonical: `https://taphoa247.io.vn/${category.slug}`,
     },
     openGraph: {
-      title: `${title} | DTFF SHOP`,
+      title: `${title} | Tạp Hóa 247`,
       description,
-      url: `https://dtffshop.com/${category.slug}`,
+      url: `https://taphoa247.io.vn/${category.slug}`,
       type: 'website',
     },
   };
@@ -42,9 +43,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export function generateStaticParams() {
   return [
     { category: 'valorant' },
+    { category: 'cursor-ai' },
+    { category: 'gemini-antigravity' },
+    { category: 'api-sub-credits' },
+    { category: 'google-one' },
+    { category: 'muse-ai' },
+    { category: 'video-ai-tools' },
+    { category: 'discord' },
     { category: 'cs2' },
-    { category: 'steam' },
-    { category: 'pubg' },
   ];
 }
 
@@ -59,12 +65,12 @@ export default async function CategoryPage({ params }: Props) {
   const { category, products } = data;
 
   const breadcrumbs = [
-    { name: 'Trang Chủ', url: 'https://dtffshop.com' },
-    { name: category.name, url: `https://dtffshop.com/${category.slug}` },
+    { name: 'Trang Chủ', url: 'https://taphoa247.io.vn' },
+    { name: category.name, url: `https://taphoa247.io.vn/${category.slug}` },
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-10">
+    <div className="min-h-screen">
       {/* Breadcrumb Schema */}
       <JsonLd
         type="BreadcrumbList"
@@ -78,108 +84,103 @@ export default async function CategoryPage({ params }: Props) {
         }}
       />
 
-      {/* Breadcrumb Trail */}
-      <nav className="flex items-center gap-2 text-xs text-slate-400 font-medium">
-        <Link href="/" className="hover:text-emerald-400">Trang Chủ</Link>
-        <span>/</span>
-        <span className="text-white font-semibold">{category.name}</span>
-      </nav>
+      {/* Hero Header */}
+      <div className="hero-bg border-b border-slate-800/30 py-10 sm:py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
+          {/* Breadcrumb Trail */}
+          <nav className="flex items-center gap-2 text-xs text-slate-500 font-medium">
+            <Link href="/" className="hover:text-[#00e5a0] transition-colors">Trang Chủ</Link>
+            <svg className="w-3 h-3 text-slate-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+            <span className="text-white font-semibold">{category.name}</span>
+          </nav>
 
-      {/* Header */}
-      <div className="space-y-3 border-b border-slate-900 pb-6">
-        <div className="flex items-center gap-3">
-          <span className="text-4xl">{category.icon}</span>
-          <div>
-            <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
-              Kho Tài Khoản {category.name} Tự Động 24/7
-            </h1>
-            <p className="text-sm text-slate-400 mt-1">{category.description}</p>
-          </div>
+          {(() => {
+            const logoMap: Record<string, string> = {
+              'discord': '/logos/discord-logo.png',
+              'cs2': '/logos/csgo2-logo.png',
+              'cursor-ai': '/images/products/cursor-logo.jpg',
+              'gemini-antigravity': '/images/products/antigravity-logo.jpg',
+              'api-sub-credits': '/images/products/apisub-logo.jpg',
+              'google-one': '/images/products/google-one-logo.png',
+              'muse-ai': '/images/products/muse-logo.jpg',
+              'video-ai-tools': '/images/products/video-ai-tools-logo.jpg',
+              'valorant': '/images/products/valorant.png',
+            };
+            const logoSrc = logoMap[category.slug] || (category.icon?.startsWith('/') ? category.icon : undefined);
+
+            return (
+              <div className="flex items-center gap-4">
+                <div className="w-16 h-16 rounded-2xl bg-[#0a0f1d] border border-slate-700/60 p-2 flex items-center justify-center shadow-xl shrink-0">
+                  {logoSrc ? (
+                    <img
+                      src={logoSrc}
+                      alt={category.name}
+                      className="w-full h-full object-contain rounded-xl"
+                    />
+                  ) : (
+                    <span className="text-3xl">{category.icon || '📦'}</span>
+                  )}
+                </div>
+                <div>
+                  <h1 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+                    Kho Tài Khoản {category.name}
+                  </h1>
+                  <p className="text-sm text-slate-400 mt-1">{category.description}</p>
+                </div>
+              </div>
+            );
+          })()}
         </div>
       </div>
 
       {/* Products Grid */}
-      <div className="space-y-6">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 space-y-8">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-white">
-            Danh Sách Gói Tài Khoản ({products.length} loại)
+          <div className="section-header">
+            <h2 className="text-lg font-bold text-white">
+              Danh Sách Gói Tài Khoản ({products.length} loại)
+            </h2>
+          </div>
+          <span className="badge badge-stock text-[10px]">
+            <span className="live-dot" style={{ width: 6, height: 6 }} />
+            Cắt kho tự động
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+          {products.map((p) => (
+            <ProductCard key={p.id} product={p} categorySlug={category.slug} />
+          ))}
+        </div>
+
+        {/* Game Guide / SEO Content */}
+        <section className="glass-card rounded-2xl p-6 sm:p-8 space-y-4">
+          <h2 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+            <span className="w-1 h-5 rounded bg-gradient-to-b from-[#00e5a0] to-[#00c4ff]" />
+            Hướng Dẫn Chọn Mua Tài Khoản {category.name}
           </h2>
-          <span className="text-xs text-emerald-400 font-mono">Cắt kho tự động qua VietQR</span>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {products.map((p) => {
-            const isOutOfStock = (p.available_stock ?? 0) <= 0;
-            return (
-              <div
-                key={p.id}
-                className="flex flex-col justify-between p-5 bg-slate-900/60 border border-slate-800 rounded-2xl hover:border-slate-700 transition-all shadow-md group"
-              >
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                      {p.is_off_mode ? '🛡️ Chủ Off 5h' : '⚡ BH 2 Giờ'}
-                    </span>
-                    <span
-                      className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
-                        isOutOfStock
-                          ? 'bg-rose-500/20 text-rose-400 border border-rose-500/30'
-                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
-                      }`}
-                    >
-                      {isOutOfStock ? 'Hết hàng' : `Còn ${p.available_stock} acc`}
-                    </span>
-                  </div>
-
-                  <Link href={`/${category.slug}/${p.slug}`} className="block">
-                    <h3 className="font-bold text-white text-base group-hover:text-emerald-400 transition-colors line-clamp-2">
-                      {p.name}
-                    </h3>
-                  </Link>
-
-                  <p className="text-xs text-slate-400 line-clamp-2">{p.short_description}</p>
-                </div>
-
-                <div className="pt-4 mt-4 border-t border-slate-800 flex items-center justify-between">
-                  <div>
-                    <span className="text-[10px] text-slate-400 block uppercase">Giá bán</span>
-                    <span className="text-lg font-black text-emerald-400 font-mono">
-                      {p.price.toLocaleString('vi-VN')}đ
-                    </span>
-                  </div>
-
-                  <Link
-                    href={`/checkout?product_id=${p.id}`}
-                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
-                      isOutOfStock
-                        ? 'bg-slate-800 text-slate-500 cursor-not-allowed pointer-events-none'
-                        : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20 active:scale-95'
-                    }`}
-                  >
-                    {isOutOfStock ? 'Hết hàng' : 'Mua ngay'}
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+          <p className="text-sm text-slate-400 leading-relaxed">
+            Khi mua acc {category.name} tại hệ thống, bạn sẽ nhận được thông tin đăng nhập ngay sau khi chuyển khoản thành công.
+            Đơn hàng được lưu trên hệ thống và bạn có thể kiểm tra danh sách acc bất cứ lúc nào qua trang Đơn Hàng.
+          </p>
+          <ul className="space-y-2 text-sm text-slate-400">
+            <li className="flex items-start gap-2">
+              <span className="text-[#00e5a0] mt-0.5">•</span>
+              <span><span className="text-white font-semibold">Giao hàng tự động 24/7:</span> Nhận thông tin đăng nhập ngay sau khi chuyển khoản thành công.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-[#00c4ff] mt-0.5">•</span>
+              <span><span className="text-white font-semibold">Bảo hành 1 đổi 1 tức thì:</span> Hỗ trợ đổi mới tự động nếu tài khoản phát sinh lỗi trong thời gian bảo hành.</span>
+            </li>
+            <li className="flex items-start gap-2">
+              <span className="text-[#a855f7] mt-0.5">•</span>
+              <span><span className="text-white font-semibold">Cam kết chính hãng:</span> Tài khoản hoạt động ổn định, bảo mật cao và an toàn tuyệt đối.</span>
+            </li>
+          </ul>
+        </section>
       </div>
-
-      {/* Game Specific Guide / SEO Content */}
-      <section className="p-6 bg-slate-900/40 border border-slate-800/80 rounded-2xl space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
-        <h2 className="text-base sm:text-lg font-bold text-white">
-          Hướng Dẫn Chọn Mua Tài Khoản {category.name} Tại DTFF SHOP
-        </h2>
-        <p>
-          Khi mua acc {category.name} tại hệ thống, bạn sẽ nhận được thông tin đăng nhập ngay sau khi chuyển khoản thành công.
-          Đơn hàng được lưu trên hệ thống và bạn có thể kiểm tra danh sách acc bất cứ lúc nào qua trang Đơn Hàng.
-        </p>
-        <ul className="list-disc pl-5 space-y-1 text-slate-400">
-          <li><b>Gói Thường (Bảo hành 2 tiếng):</b> Thích hợp chơi thử rank, quẩy cùng bạn bè hoặc trải nghiệm skin súng.</li>
-          <li><b>Gói Chủ Off (Bảo hành 5 tiếng):</b> Dành cho anh em muốn cày rank cố định, hạn chế tối đa nguy cơ bị đè tài khoản.</li>
-          <li><b>Bảo hành tự động:</b> Nếu tài khoản sai mật khẩu hoặc bị khóa khi vừa nhận, gửi yêu cầu bảo hành là có acc mới ngay.</li>
-        </ul>
-      </section>
     </div>
   );
 }

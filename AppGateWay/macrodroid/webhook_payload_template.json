@@ -1,0 +1,7 @@
+{
+  "_comment": "Đoạn JSON cấu hình dán vào mục Body của HTTP Request trong MacroDroid",
+  "app_package": "[not_pkg_name]",
+  "title": "[not_title]",
+  "raw_content": "[not_body]",
+  "posted_at": "[year]-[month]-[day]T[hour]:[minute]:[second]+07:00"
+}

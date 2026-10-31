@@ -45,7 +45,7 @@ export default function CheckAccPage({ params }: Props) {
     <div className="max-w-3xl mx-auto px-4 py-10 space-y-8">
       <div className="flex items-center justify-between">
         <div>
-          <span className="text-xs font-mono text-emerald-400 font-bold">DTFF SHOP • TRA CỨU KHO ĐỒ</span>
+          <span className="text-xs font-mono text-emerald-400 font-bold">TẠP HÓA 247 • TRA CỨU KHO ĐỒ</span>
           <h1 className="text-2xl font-black text-white">Chi Tiết Tài Khoản Đơn: {code}</h1>
         </div>
         <Link href={`/don-hang/${code}`} className="text-xs text-slate-400 hover:text-white">

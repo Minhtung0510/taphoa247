@@ -25,17 +25,21 @@ export function OrganizationSchema() {
     <JsonLd
       type="Organization"
       data={{
-        name: 'DTFF SHOP - Shop Bán Acc Game Tự Động',
-        url: 'https://dtffshop.com',
-        logo: 'https://dtffshop.com/logo.png',
+        name: 'TẠP HÓA 247 - Shop Bán Acc Game, Tài Khoản AI & Phần Mềm Tự Động 24/7',
+        url: 'https://taphoa247.io.vn',
+        logo: 'https://taphoa247.io.vn/logo.png',
         description:
-          'Hệ thống bán tài khoản game Valorant, CS:GO 2, Steam, PUBG uy tín tự động 24/7 bằng mã VietQR MBBank. Bảo hành 1 đổi 1 tức thì.',
+          'Hệ thống bán tài khoản game Valorant, CS2 Prime, Steam, Tài khoản AI ChatGPT uy tín tự động 24/7 bằng mã VietQR TPBank. Bảo hành 1 đổi 1 tức thì.',
         contactPoint: {
           '@type': 'ContactPoint',
-          telephone: '+84-900-000-000',
           contactType: 'customer service',
+          telephone: '+84937809305',
           availableLanguage: ['Vietnamese'],
         },
+        sameAs: [
+          'https://t.me/taphoa247',
+          'https://www.facebook.com/bill300213/',
+        ],
       }}
     />
   );
@@ -46,11 +50,11 @@ export function WebsiteSchema() {
     <JsonLd
       type="WebSite"
       data={{
-        name: 'DTFF SHOP',
-        url: 'https://dtffshop.com',
+        name: 'TẠP HÓA 247',
+        url: 'https://taphoa247.io.vn',
         potentialAction: {
           '@type': 'SearchAction',
-          target: 'https://dtffshop.com/tim-kiem?q={search_term_string}',
+          target: 'https://taphoa247.io.vn/tim-kiem?q={search_term_string}',
           'query-input': 'required name=search_term_string',
         },
       }}

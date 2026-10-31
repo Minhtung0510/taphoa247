@@ -41,9 +41,20 @@ return [
 
     'sepay' => [
         'api_key' => env('SEPAY_API_KEY'),
+        'webhook_key' => env('SEPAY_WEBHOOK_KEY'),
         'bank_code' => env('BANK_CODE', 'TPB'),
         'account_no' => env('ACCOUNT_NO', ''),
         'account_name' => env('ACCOUNT_NAME', ''),
+    ],
+
+    'device_gateway' => [
+        'secret' => env('DEVICE_GATEWAY_SECRET', 'DTFF_SECRET_TEST_2026'),
+    ],
+
+    'discord' => [
+        'client_id' => env('DISCORD_CLIENT_ID', ''),
+        'client_secret' => env('DISCORD_CLIENT_SECRET', ''),
+        'redirect' => env('DISCORD_REDIRECT_URI', 'http://localhost:3000/auth/discord/callback'),
     ],
 
 ];

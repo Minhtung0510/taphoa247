@@ -41,6 +41,8 @@ return [
 
     'debug' => (bool) env('APP_DEBUG', false),
 
+    'allow_mock_auth' => (bool) env('ALLOW_MOCK_AUTH', false),
+
     /*
     |--------------------------------------------------------------------------
     | Application URL

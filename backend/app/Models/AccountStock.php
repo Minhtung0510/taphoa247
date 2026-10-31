@@ -23,6 +23,10 @@ class AccountStock extends Model
         'sold_at',
     ];
 
+    protected $hidden = [
+        'credentials',
+    ];
+
     protected $casts = [
         'reserved_at' => 'datetime',
         'sold_at' => 'datetime',

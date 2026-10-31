@@ -6,7 +6,7 @@ test.describe('E-Commerce Gaming Account Website Test Suite', () => {
     await page.goto('/');
 
     // Kiểm tra title và metadata
-    await expect(page).toHaveTitle(/DTFF SHOP/i);
+    await expect(page).toHaveTitle(/TẠP HÓA 247/i);
     const metaDesc = page.locator('meta[name="description"]');
     await expect(metaDesc).toHaveAttribute('content', /tự động|Valorant|CS2|Steam/i);
 
@@ -31,7 +31,7 @@ test.describe('E-Commerce Gaming Account Website Test Suite', () => {
     expect(hasWebSite).toBe(true);
 
     // Kiểm tra Mascot AI hiển thị
-    const mascot = page.locator('text=[AI Thu Ngân]');
+    const mascot = page.locator('text=/Em Yến Tư Vấn/');
     await expect(mascot).toBeVisible();
   });
 

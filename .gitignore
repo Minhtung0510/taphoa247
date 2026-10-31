@@ -1,0 +1,56 @@
+# Root .gitignore for DTFF Shop
+
+# Environment & Secret files
+.env
+.env.*
+!.env.example
+backend/.env
+backend/.env.*
+!backend/.env.example
+frontend/.env*.local
+
+# Dependencies
+vendor/
+backend/vendor/
+node_modules/
+frontend/node_modules/
+
+# Build artifacts
+frontend/.next/
+frontend/out/
+backend/public/build/
+backend/public/hot/
+backend/public/storage/
+
+# Cache & Logs
+*.log
+backend/storage/logs/*.log
+backend/storage/framework/cache/
+backend/storage/framework/sessions/
+backend/storage/framework/views/
+backend/storage/warranty_evidence/
+.phpunit.result.cache
+*.tsbuildinfo
+
+# OS & Editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Local tooling and generated files
+.playwright-cli/
+**/.gradle/
+**/build/
+**/local.properties
+*.jks
+*.keystore
+*.sqlite
+*.sqlite3
+*.sqlite-*
+*.sqlite3-*
+*.sql
+*.sql.gz
+*.pem
+*.key

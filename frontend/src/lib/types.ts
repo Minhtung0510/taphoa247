@@ -9,6 +9,16 @@ export interface Category {
   products_count?: number;
 }
 
+export interface ProductOption {
+  id: string | number;
+  name: string;
+  price: number;
+  display_price?: string;
+  is_available: boolean;
+  stock_status?: string;
+  stock_detail?: string;
+}
+
 export interface Product {
   id: number;
   category_id: number;
@@ -22,6 +32,8 @@ export interface Product {
   short_description?: string;
   details_markdown?: string;
   badges?: string[];
+  image_url?: string;
+  options?: ProductOption[];
   is_active: boolean;
   available_stock?: number;
   category?: Category;
@@ -37,12 +49,25 @@ export interface OrderItem {
     username: string;
     password?: string;
     riot_id?: string;
+    region?: string;
     rank?: string;
     peak_rank?: string;
     level?: number;
+    vp?: number;
+    rp?: number;
+    kc?: number;
+    email_verified?: boolean;
+    phone_verified?: boolean;
+    last_game?: string;
     skins_count?: number;
     knives?: string[];
+    weapons?: Array<{
+      name: string;
+      type: string;
+      tier: string;
+    }>;
     is_cs?: boolean;
+    raw?: string;
   };
   warranty_expires_at?: string;
   is_warranty_valid?: boolean;
@@ -52,11 +77,22 @@ export interface OrderItem {
 
 export interface OrderDetails {
   order_code: string;
+  access_token?: string;
   customer_name: string;
   total_amount: number;
   paid_at?: string;
   items_count: number;
   items: OrderItem[];
+  status?: string;
+  is_paid?: boolean;
+  is_expired?: boolean;
+  is_cancelled?: boolean;
+  memo?: string;
+  qr_url?: string;
+  bank_code?: string;
+  account_no?: string;
+  account_name?: string;
+  remaining_seconds?: number;
 }
 
 export interface LiveStats {

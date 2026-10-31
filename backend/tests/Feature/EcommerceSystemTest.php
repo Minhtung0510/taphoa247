@@ -291,17 +291,26 @@ class EcommerceSystemTest extends TestCase
             [$fakeFile]
         );
 
-        $this->assertEquals('approved', $claim->state);
-        $this->assertEquals(1, $item->fresh()->replacement_count);
-        $this->assertFalse($item->fresh()->isWarrantyValid()); // Đã đổi 1 lần -> Hết lượt đổi
+        $this->assertEquals('waiting_admin', $claim->state);
 
-        // 5.3. Test chống sử dụng lại bằng chứng trùng lặp (SHA-256 deduplication)
+        // Admin duyệt bù acc
+        $adminController = app(\App\Http\Controllers\Api\AdminController::class);
+        $request = new \Illuminate\Http\Request();
+        $adminController->approveClaim($request, $claim->id);
+
+        $this->assertEquals('approved', $claim->fresh()->state);
+        $this->assertEquals(1, $item->fresh()->replacement_count);
+        $this->assertTrue($item->fresh()->isWarrantyValid()); // Đã đổi 1 lần -> Vẫn còn lượt bảo hành (tối đa 3 lượt)
+
+        // 5.3. Test khi đạt tối đa 3 lượt đổi thì hết hạn
+        $item->update(['replacement_count' => 3]);
+        $this->assertFalse($item->fresh()->isWarrantyValid());
+
         $this->expectException(\InvalidArgumentException::class);
-        $fakeFileDuplicate = UploadedFile::fake()->createWithContent('another_proof.png', $pngHeader);
         $warrantyService->submitClaim(
             $order,
             [['order_item_id' => $item->id]],
-            [$fakeFileDuplicate]
+            [$fakeFile]
         );
     }
 
@@ -322,5 +331,39 @@ class EcommerceSystemTest extends TestCase
 
         $adminResponse->assertStatus(200);
         $adminResponse->assertJsonStructure(['success', 'data']);
+
+        // 3. IDOR test trên đơn hàng đã thanh toán
+        $checkoutService = app(\App\Services\CheckoutService::class);
+        $orderService = app(\App\Services\OrderService::class);
+        AccountStock::create([
+            'product_id' => $this->productValo->id,
+            'account_type' => $this->productValo->account_type,
+            'credentials' => 'idor_test_user:pass123',
+            'status' => 'available',
+        ]);
+        $order = $checkoutService->checkout([
+            'product_id' => $this->productValo->id,
+            'quantity' => 1,
+            'customer_name' => 'Chủ Đơn Hàng',
+            'customer_email' => 'owner@example.com',
+            'user_id' => $this->customer->id,
+        ]);
+        $orderService->fulfillOrder($order, ['transactionID' => 'TX_IDOR_TEST']);
+
+        // Kẻ tấn công khác truy cập không có token -> 403 Forbidden
+        $otherUser = \App\Models\User::factory()->create(['role' => 'customer']);
+        $attackerRes = $this->actingAs($otherUser, 'sanctum')
+            ->getJson("/api/v1/orders/{$order->order_code}/details");
+        $attackerRes->assertStatus(403);
+
+        // Chủ đơn hàng truy cập -> 200 OK
+        $ownerRes = $this->actingAs($this->customer, 'sanctum')
+            ->getJson("/api/v1/orders/{$order->order_code}/details");
+        $ownerRes->assertStatus(200);
+
+        // Truy cập với Order Access Token hợp lệ -> 200 OK
+        $guestWithTokenRes = $this->withHeaders(['X-Order-Token' => $order->access_token])
+            ->getJson("/api/v1/orders/{$order->order_code}/details");
+        $guestWithTokenRes->assertStatus(200);
     }
 }

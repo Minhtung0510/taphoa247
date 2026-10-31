@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\PaymentGatewayInterface;
 use App\Models\Order;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -43,13 +44,11 @@ class SePayService implements PaymentGatewayInterface
         $acc = $this->accountNo ?: '0000000000';
         $cleanMemo = rawurlencode($memo);
 
-        // SePay QR Image API tự động tương thích 100% app ngân hàng Việt Nam
         return "https://qr.sepay.vn/img?bank={$bank}&acc={$acc}&template=compact&amount={$amount}&des={$cleanMemo}";
     }
 
     /**
-     * Kéo danh sách biến động số dư từ SePay qua API Polling (Cách 1 - Không cần Domain)
-     * Endpoint: GET https://my.sepay.vn/userapi/transactions/list
+     * Kéo danh sách biến động số dư từ SePay qua API Polling (Có Cache 5s chống DoS/Rate Limit)
      */
     public function fetchHistory(): ?array
     {
@@ -62,26 +61,62 @@ class SePayService implements PaymentGatewayInterface
             return null;
         }
 
-        $url = 'https://my.sepay.vn/userapi/transactions/list?limit=25';
-        if (!empty($this->accountNo)) {
-            $url .= '&account_number=' . urlencode($this->accountNo);
+        $cacheKey = 'sepay_history_cache_' . md5($this->accountNo);
+        $cached = Cache::get($cacheKey);
+        if ($cached && is_array($cached)) {
+            return $cached;
         }
 
-        try {
-            $response = Http::timeout(15)
-                ->withHeaders([
-                    'Authorization' => 'Apikey ' . $this->apiKey,
+        $endpoints = [
+            'https://userapi.sepay.vn/v2/transactions?per_page=25' . (!empty($this->accountNo) ? '&account_number=' . urlencode($this->accountNo) : ''),
+            'https://my.sepay.vn/userapi/transactions/list?limit=25' . (!empty($this->accountNo) ? '&account_number=' . urlencode($this->accountNo) : ''),
+        ];
+
+        foreach ($endpoints as $url) {
+            try {
+                $client = Http::timeout(8);
+                // Bỏ qua SSL verification trên môi trường Windows dev hoặc non-production để tránh lỗi cURL 60 (thiếu cacert.pem)
+                if (!app()->environment('production') || DIRECTORY_SEPARATOR === '\\') {
+                    $client = $client->withoutVerifying();
+                }
+
+                $response = $client->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->apiKey,
                     'Content-Type' => 'application/json',
-                ])
-                ->get($url);
+                ])->get($url);
 
-            if ($response->successful()) {
-                return $response->json();
+                if ($response->successful()) {
+                    $json = $response->json();
+                    Cache::put($cacheKey, $json, 3); // Cache 3 giây
+                    return $json;
+                }
+
+                if ($response->status() === 401) {
+                    Log::warning('[SePay] API Token không hợp lệ hoặc chưa cấp quyền (401 Unauthorized).');
+                    return null;
+                }
+            } catch (\Throwable $e) {
+                // Tự động retry với withoutVerifying nếu gặp cURL error 60 (SSL Certificate issue)
+                if (str_contains($e->getMessage(), 'cURL error 60')) {
+                    try {
+                        $fallbackRes = Http::withoutVerifying()
+                            ->timeout(8)
+                            ->withHeaders([
+                                'Authorization' => 'Bearer ' . $this->apiKey,
+                                'Content-Type' => 'application/json',
+                            ])->get($url);
+
+                        if ($fallbackRes->successful()) {
+                            $json = $fallbackRes->json();
+                            Cache::put($cacheKey, $json, 3);
+                            return $json;
+                        }
+                    } catch (\Throwable $inner) {
+                        Log::error('[SePay] Ngoại lệ fallback: ' . $inner->getMessage());
+                    }
+                }
+                Log::error('[SePay] Ngoại lệ khi kết nối SePay: ' . $e->getMessage());
             }
-
-            Log::error('[SePay] Lỗi gọi API giao dịch: ' . $response->status() . ' - ' . $response->body());
-        } catch (\Throwable $e) {
-            Log::error('[SePay] Ngoại lệ khi kết nối SePay: ' . $e->getMessage());
         }
 
         return null;
@@ -94,7 +129,7 @@ class SePayService implements PaymentGatewayInterface
     {
         if ($this->testMode && $history === null) {
             return [
-                'transactionID' => 'TEST-' . uniqid(),
+                'transactionID' => 'TEST-' . $order->order_code . '-' . time(),
                 'creditAmount' => $order->total_amount,
                 'description' => $order->memo,
                 'transactionDate' => now()->toDateTimeString(),
@@ -102,32 +137,63 @@ class SePayService implements PaymentGatewayInterface
         }
 
         $data = $history ?? $this->fetchHistory();
-        if (!$data || empty($data['transactions']) || !is_array($data['transactions'])) {
+        if (!$data) {
             return null;
         }
 
-        // Cú pháp memo chuẩn: ACC-XXXXXXXX
-        $code = strtoupper(str_replace('ACC-', '', $order->order_code));
-        $fullMemo = strtoupper($order->memo);
+        $transactions = $data['transactions'] ?? $data['data']['transactions'] ?? $data['data'] ?? [];
+        if (isset($transactions['transactions']) && is_array($transactions['transactions'])) {
+            $transactions = $transactions['transactions'];
+        }
+        if (!is_array($transactions) || empty($transactions)) {
+            return null;
+        }
+
+        $orderCode = strtoupper((string) $order->order_code);
+        $code = strtoupper(str_replace('ACC-', '', $orderCode));
+        $fullMemo = strtoupper((string) $order->memo);
         $neededAmount = (int) $order->total_amount;
 
-        foreach ($data['transactions'] as $tx) {
-            $desc = strtoupper((string) ($tx['transaction_content'] ?? ''));
+        foreach ($transactions as $tx) {
+            $desc = strtoupper((string) ($tx['transaction_content'] ?? $tx['content'] ?? $tx['description'] ?? ''));
             $descClean = str_replace([' ', '-', '_', '.'], '', $desc);
             $targetClean = str_replace([' ', '-', '_', '.'], '', $fullMemo);
             $codeClean = str_replace([' ', '-', '_', '.'], '', $code);
+            $orderCodeClean = str_replace([' ', '-', '_', '.'], '', $orderCode);
 
-            // Khớp nội dung đơn hàng (toàn bộ memo hoặc mã 8 ký tự)
-            if (str_contains($descClean, $targetClean) || str_contains($descClean, $codeClean)) {
-                $rawCredit = str_replace([',', '.'], '', (string) ($tx['amount_in'] ?? 0));
-                $credit = (int) $rawCredit;
+            $matched = false;
+            // 1. Khớp theo full memo (VD: ACC-SWQNOSKX hoặc custom memo)
+            if (!empty($targetClean) && strlen($targetClean) >= 6 && str_contains($descClean, $targetClean)) {
+                $matched = true;
+            // 2. Khớp theo mã đơn đầy đủ dạng ACCSWQNOSKX (ngân hàng bỏ dấu gạch)
+            } elseif (!empty($orderCodeClean) && strlen($orderCodeClean) >= 6 && str_contains($descClean, $orderCodeClean)) {
+                $matched = true;
+            // 3. Khớp theo mã ngắn không có tiền tố ACC (VD: SWQNOSKX)
+            } elseif (!empty($codeClean) && strlen($codeClean) >= 6 && str_contains($descClean, $codeClean)) {
+                $matched = true;
+            // 4. Khớp theo tiền tố 8 ký tự khi ngân hàng cắt ngắn bớt ký tự cuối (VD: ACCSWQNO..)
+            } elseif (strlen($orderCodeClean) >= 8 && str_contains($descClean, substr($orderCodeClean, 0, 8))) {
+                $matched = true;
+            }
+
+            if ($matched) {
+                $rawCredit = (string) ($tx['amount_in'] ?? $tx['amount'] ?? 0);
+                $credit = (int) round((float) str_replace(',', '', $rawCredit));
 
                 if ($credit >= $neededAmount) {
+                    $rawTx = $tx['reference_number'] ?? $tx['code'] ?? ($tx['id'] ?? null);
+                    if (!empty($rawTx)) {
+                        $txId = (string) $rawTx;
+                    } else {
+                        $txDate = (string) ($tx['transaction_date'] ?? $tx['created_at'] ?? now()->toDateString());
+                        $txId = 'TX-' . substr(hash('sha256', "{$credit}|{$desc}|{$txDate}"), 0, 16);
+                    }
+
                     return [
-                        'transactionID' => (string) ($tx['reference_number'] ?: ($tx['id'] ?? uniqid())),
+                        'transactionID' => $txId,
                         'creditAmount' => $credit,
-                        'description' => $tx['transaction_content'] ?? '',
-                        'transactionDate' => $tx['transaction_date'] ?? now()->toDateTimeString(),
+                        'description' => $desc,
+                        'transactionDate' => $tx['transaction_date'] ?? $tx['created_at'] ?? now()->toDateTimeString(),
                     ];
                 }
             }

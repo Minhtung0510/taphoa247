@@ -119,11 +119,11 @@ class ImportLegacyData extends Command
             $slug = Str::slug($p['name']);
 
             $productModels[$p['type']] = Product::updateOrCreate(
-                ['account_type' => $p['type']],
+                ['slug' => $slug],
                 [
                     'category_id' => $cat->id,
+                    'account_type' => $p['type'],
                     'name' => $p['name'],
-                    'slug' => $slug,
                     'price' => $price,
                     'warranty_hours' => $p['w'],
                     'is_auto_warranty' => $p['auto_w'] ?? true,

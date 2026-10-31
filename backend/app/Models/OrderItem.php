@@ -22,6 +22,13 @@ class OrderItem extends Model
         'warranty_duration_hours',
         'warranty_expires_at',
         'replacement_count',
+        'digishop_order_id',
+        'digishop_status',
+        'shopmmo_order_id',
+    ];
+
+    protected $hidden = [
+        'delivered_credentials',
     ];
 
     protected $casts = [
@@ -77,8 +84,8 @@ class OrderItem extends Model
 
     public function isWarrantyValid(): bool
     {
-        if ($this->replacement_count >= 1) {
-            return false; // Can only replace once
+        if ($this->replacement_count >= 3) {
+            return false; // Tối đa 3 lượt bảo hành theo quy định của Shop
         }
         if (!$this->warranty_expires_at) {
             return false;

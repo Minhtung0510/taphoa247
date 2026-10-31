@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Quản Trị Hệ Thống - DTFF SHOP',
+  title: 'Quản Trị Hệ Thống - TẠP HÓA 247',
   robots: {
     index: false,
     follow: false,

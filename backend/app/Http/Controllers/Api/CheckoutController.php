@@ -9,6 +9,7 @@ use App\Services\CheckoutService;
 use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -21,19 +22,38 @@ class CheckoutController extends Controller
     ) {}
 
     /**
-     * Tạo đơn hàng mới & giữ chỗ kho
+     * Tạo đơn hàng mới & giữ chỗ kho an toàn
      */
     public function checkout(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'product_id' => 'required|exists:products,id',
+            'product_id' => 'required|integer|exists:products,id',
             'quantity' => 'required|integer|min:1|max:50',
             'customer_name' => 'nullable|string|max:100',
             'customer_email' => 'nullable|email|max:150',
-            'customer_phone' => 'nullable|string|max:20',
+            'customer_phone' => ['nullable', 'string', 'max:20', 'regex:/^[0-9+\s\-]{8,20}$/'],
+            'coupon_code' => 'nullable|string|max:64',
+            'option_id' => 'nullable|string|max:50',
+        ], [
+            'customer_phone.regex' => 'Số điện thoại không đúng định dạng.',
+            'quantity.max' => 'Số lượng tối đa mỗi đơn hàng là 50 tài khoản.',
         ]);
 
-        $validated['user_id'] = $request->user()?->id;
+        $authUser = $request->user('sanctum') ?? auth('sanctum')->user();
+        if (!$authUser) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng đăng nhập tài khoản trước khi thực hiện mua hàng.',
+            ], 401);
+        }
+
+        $validated['user_id'] = $authUser->id;
+        if (empty($validated['customer_email']) && !empty($authUser->email) && !str_contains($authUser->email, '@dtffshop.local')) {
+            $validated['customer_email'] = $authUser->email;
+        }
+        if (empty($validated['customer_name'])) {
+            $validated['customer_name'] = $authUser->name;
+        }
 
         try {
             $order = $this->checkoutService->checkout($validated);
@@ -43,6 +63,7 @@ class CheckoutController extends Controller
                 'message' => 'Tạo đơn hàng thành công. Vui lòng quét mã VietQR để thanh toán.',
                 'data' => [
                     'order_code' => $order->order_code,
+                    'access_token' => $order->access_token,
                     'memo' => $order->memo,
                     'total_amount' => $order->total_amount,
                     'qr_url' => $order->qr_url,
@@ -50,20 +71,28 @@ class CheckoutController extends Controller
                     'account_no' => env('ACCOUNT_NO', ''),
                     'account_name' => env('ACCOUNT_NAME', 'DTFF SHOP'),
                     'expires_at' => $order->expires_at?->toIso8601String(),
-                    'remaining_seconds' => max(0, now()->diffInSeconds($order->expires_at, false)),
+                    'remaining_seconds' => (int) max(0, now()->diffInSeconds($order->expires_at, false)),
                     'status' => $order->status,
                 ],
             ]);
-        } catch (\Throwable $e) {
+        } catch (\InvalidArgumentException $e) {
             return response()->json([
                 'success' => false,
                 'message' => $e->getMessage(),
             ], 422);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('[Checkout Exception] ' . $e->getMessage());
+            return response()->json([
+                'success' => false,
+                'message' => app()->environment('production')
+                    ? 'Đã xảy ra lỗi trong quá trình xử lý đơn hàng. Vui lòng thử lại sau.'
+                    : $e->getMessage(),
+            ], 500);
         }
     }
 
     /**
-     * Tra cứu trạng thái đơn hàng (Polling)
+     * Tra cứu trạng thái đơn hàng (Polling nhẹ nhàng, không gây nghẽn SePay)
      */
     public function status(string $orderCode): JsonResponse
     {
@@ -73,8 +102,24 @@ class CheckoutController extends Controller
 
         // Kiểm tra quá hạn
         if ($order->isExpired()) {
-            $this->orderService->releaseExpiredOrders();
-            $order->refresh();
+            $lockKey = 'release_lock_' . $order->id;
+            if (Cache::add($lockKey, 1, 10)) {
+                $this->orderService->releaseExpiredOrders();
+                $order->refresh();
+            }
+        }
+
+        // Tự động đối soát thanh toán trực tiếp (SePayService đã có sẵn cache bảo vệ endpoint)
+        if ($order->status === 'pending' && !$order->isExpired()) {
+            try {
+                $matchedTx = $this->paymentGateway->findMatchingTransaction($order);
+                if ($matchedTx) {
+                    $this->orderService->fulfillOrder($order, $matchedTx);
+                    $order->refresh();
+                }
+            } catch (\Throwable $e) {
+                Log::warning('[Checkout Polling] Lỗi đối soát: ' . $e->getMessage());
+            }
         }
 
         return response()->json([
@@ -85,7 +130,7 @@ class CheckoutController extends Controller
                 'total_amount' => $order->total_amount,
                 'paid_at' => $order->paid_at?->toIso8601String(),
                 'is_paid' => $order->isPaid(),
-                'remaining_seconds' => max(0, $order->expires_at ? now()->diffInSeconds($order->expires_at, false) : 0),
+                'remaining_seconds' => (int) max(0, $order->expires_at ? now()->diffInSeconds($order->expires_at, false) : 0),
             ],
         ]);
     }
@@ -101,12 +146,12 @@ class CheckoutController extends Controller
             header('X-Accel-Buffering: no');
 
             $start = time();
-            while (time() - $start < 30) { // Max execution 30s per connection
+            while (time() - $start < 30) { // Giới hạn tối đa 30s giải phóng worker
                 $order = Order::where('order_code', $orderCode)->first();
 
                 if (!$order) {
                     echo "event: error\ndata: " . json_encode(['message' => 'Không tìm thấy đơn hàng']) . "\n\n";
-                    ob_flush();
+                    if (ob_get_level() > 0) ob_flush();
                     flush();
                     break;
                 }
@@ -119,7 +164,7 @@ class CheckoutController extends Controller
                 ];
 
                 echo "event: status\ndata: " . json_encode($data) . "\n\n";
-                ob_flush();
+                if (ob_get_level() > 0) ob_flush();
                 flush();
 
                 if ($order->isPaid() || $order->status === 'timeout') {
@@ -132,14 +177,35 @@ class CheckoutController extends Controller
     }
 
     /**
-     * Giả lập thanh toán tức thì (Chỉ kích hoạt khi PAYMENT_TEST_MODE=true)
+     * Giả lập thanh toán tức thì (Chỉ kích hoạt trong môi trường dev/test khi có quyền Admin)
      */
-    public function testPay(string $orderCode): JsonResponse
+    public function testPay(Request $request, string $orderCode): JsonResponse
     {
+        // 1. Chặn tuyệt đối trên Production
+        if (app()->environment('production')) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Chức năng giả lập thanh toán đã bị vô hiệu hóa trên môi trường sản xuất (Production).',
+            ], 404);
+        }
+
+        // 2. Chặn nếu PAYMENT_TEST_MODE không bật
         if (!$this->paymentGateway->isTestMode()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Chế độ test thanh toán không được kích hoạt.',
+                'message' => 'Chế độ thanh toán thử nghiệm chưa được kích hoạt trong tệp cấu hình.',
+            ], 403);
+        }
+
+        // 3. Yêu cầu xác thực tài khoản Admin hoặc truyền secret dev key
+        $user = $request->user('sanctum') ?? auth('sanctum')->user();
+        $devSecret = $request->header('X-Dev-Secret') ?: $request->input('dev_secret');
+        $validDevSecret = env('APP_DEV_SECRET', 'dtff_dev_secret_test');
+
+        if ((!$user || !$user->isAdmin()) && (!hash_equals($validDevSecret, (string) $devSecret))) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Bạn phải là Quản trị viên hoặc có mã Dev Secret hợp lệ để sử dụng tính năng thử nghiệm này.',
             ], 403);
         }
 
