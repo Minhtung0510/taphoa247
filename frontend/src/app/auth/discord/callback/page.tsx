@@ -50,7 +50,7 @@ function DiscordCallbackContent() {
 
     // Chống tấn công CSRF / Account Hijacking: So khớp state nhận về từ Discord với state phiên trình duyệt đã lưu
     const savedState = typeof window !== 'undefined' ? sessionStorage.getItem('discord_oauth_state') : null;
-    if (savedState && savedState !== state) {
+    if (!savedState || savedState !== state) {
       if (typeof window !== 'undefined') {
         sessionStorage.removeItem('discord_oauth_state');
       }
