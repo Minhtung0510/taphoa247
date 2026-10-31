@@ -24,7 +24,7 @@ Route::prefix('v1')->group(function () {
     // 2. Checkout & Orders
     Route::post('/orders/checkout', [CheckoutController::class, 'checkout'])->middleware('throttle:60,1,checkout');
     Route::get('/orders/{orderCode}/status', [CheckoutController::class, 'status'])->middleware('throttle:120,1,status');
-    Route::get('/orders/{orderCode}/stream', [CheckoutController::class, 'stream']);
+    Route::get('/orders/{orderCode}/stream', [CheckoutController::class, 'stream'])->middleware('throttle:10,1,stream');
     Route::post('/orders/{orderCode}/test-pay', [CheckoutController::class, 'testPay']);
     Route::post('/payments/sepay/webhook', [\App\Http\Controllers\Api\PaymentWebhookController::class, 'handleSePay']);
     Route::post('/payments/device/webhook', [\App\Http\Controllers\Api\DevicePaymentWebhookController::class, 'handleWebhook']);
