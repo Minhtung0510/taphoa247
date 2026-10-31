@@ -18,6 +18,6 @@ echo ========================================================
 echo  ✓ Hệ thống đã khởi chạy thành công!
 echo  - Trang web shop: http://localhost:3000
 echo  - API Backend:    http://127.0.0.1:8000/api/v1
-echo  - Trang Admin:    http://localhost:3000/admin (admin@dtffshop.com / password123)
+echo  - Trang Admin:    http://localhost:3000/admin (Xem mat khau trong .env / su dung php artisan admin:reset-password)
 echo ========================================================
 pause

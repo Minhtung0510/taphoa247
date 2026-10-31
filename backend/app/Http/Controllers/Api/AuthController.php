@@ -222,7 +222,8 @@ class AuthController extends Controller
         }
 
         RateLimiter::clear($throttleKey);
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $expiresAt = $user->isAdmin() ? now()->addHours(12) : null;
+        $token = $user->createToken('auth_token', ['*'], $expiresAt)->plainTextToken;
 
         return response()->json([
             'success' => true,
@@ -398,7 +399,8 @@ class AuthController extends Controller
                 ]);
             }
 
-            $token = $user->createToken('discord_token')->plainTextToken;
+            $expiresAt = $user->isAdmin() ? now()->addHours(12) : null;
+            $token = $user->createToken('discord_token', ['*'], $expiresAt)->plainTextToken;
 
             return response()->json([
                 'success' => true,
