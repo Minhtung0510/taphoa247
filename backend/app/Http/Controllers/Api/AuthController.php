@@ -249,31 +249,34 @@ class AuthController extends Controller
     public function discordRedirect(Request $request): JsonResponse
     {
         $clientId = config('services.discord.client_id');
-        $redirectUri = config('services.discord.redirect');
+        $allowedRedirects = config('services.discord.allowed_redirects', [config('services.discord.redirect')]);
 
-        // Tự động phát hiện domain từ request (localhost hoặc taphoa247.io.vn)
-        $origin = $request->header('Origin') ?: $request->header('Referer');
-        if ($origin) {
-            if (str_contains($origin, 'taphoa247.io.vn')) {
-                $redirectUri = 'https://taphoa247.io.vn/auth/discord/callback';
-            } elseif (str_contains($origin, 'localhost:3000') || str_contains($origin, '127.0.0.1:3000')) {
-                $redirectUri = 'http://localhost:3000/auth/discord/callback';
-            }
+        $requestedRedirect = $request->input('redirect_uri');
+        if ($requestedRedirect && in_array($requestedRedirect, $allowedRedirects, true)) {
+            $redirectUri = $requestedRedirect;
+        } else {
+            $redirectUri = config('services.discord.redirect');
         }
 
         $isConfigured = !empty($clientId) && !empty(config('services.discord.client_secret'));
+
+        // Sinh state ngẫu nhiên lưu cache 10 phút chống CSRF
+        $state = Str::random(40);
+        Cache::put("discord_oauth_state:{$state}", true, now()->addMinutes(10));
 
         $url = "https://discord.com/api/oauth2/authorize?" . http_build_query([
             'client_id' => $clientId ?: 'CLIENT_ID_PLACEHOLDER',
             'redirect_uri' => $redirectUri,
             'response_type' => 'code',
             'scope' => 'identify email',
+            'state' => $state,
         ]);
 
         return response()->json([
             'success' => true,
             'data' => [
                 'auth_url' => $url,
+                'state' => $state,
                 'is_configured' => $isConfigured,
                 'client_id' => $clientId,
                 'redirect_uri' => $redirectUri,
@@ -288,20 +291,27 @@ class AuthController extends Controller
     {
         $request->validate([
             'code' => 'required|string',
+            'state' => 'required|string',
         ]);
+
+        // Kiểm tra và thu hồi state CSRF
+        $stateKey = "discord_oauth_state:{$request->state}";
+        if (!Cache::pull($stateKey)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Phiên đăng nhập Discord không hợp lệ hoặc đã hết hạn (CSRF state mismatch). Vui lòng thử lại.',
+            ], 403);
+        }
 
         $clientId = config('services.discord.client_id');
         $clientSecret = config('services.discord.client_secret');
-        $redirectUri = $request->input('redirect_uri') ?: config('services.discord.redirect');
+        $allowedRedirects = config('services.discord.allowed_redirects', [config('services.discord.redirect')]);
 
-        // Tự động khớp redirectUri theo Origin/Referer nếu không có truyền lên
-        $origin = $request->header('Origin') ?: $request->header('Referer');
-        if (!$request->input('redirect_uri') && $origin) {
-            if (str_contains($origin, 'taphoa247.io.vn')) {
-                $redirectUri = 'https://taphoa247.io.vn/auth/discord/callback';
-            } elseif (str_contains($origin, 'localhost:3000') || str_contains($origin, '127.0.0.1:3000')) {
-                $redirectUri = 'http://localhost:3000/auth/discord/callback';
-            }
+        $requestedRedirect = $request->input('redirect_uri');
+        if ($requestedRedirect && in_array($requestedRedirect, $allowedRedirects, true)) {
+            $redirectUri = $requestedRedirect;
+        } else {
+            $redirectUri = config('services.discord.redirect');
         }
 
         if (empty($clientId) || empty($clientSecret)) {
@@ -356,9 +366,10 @@ class AuthController extends Controller
             }
 
             $discordUser = $userRes->json();
-            $discordId = $discordUser['id'];
-            $email = $discordUser['email'] ?? "discord_{$discordId}@dtffshop.local";
-            $name = $discordUser['global_name'] ?? $discordUser['username'] ?? "Discord User";
+            $discordId = (string) $discordUser['id'];
+            $rawEmail = isset($discordUser['email']) ? strtolower(trim((string) $discordUser['email'])) : null;
+            $isVerified = !empty($discordUser['verified']);
+            $name = $discordUser['global_name'] ?? $discordUser['username'] ?? 'Discord User';
 
             // Định dạng avatar Discord
             $avatar = null;
@@ -368,10 +379,21 @@ class AuthController extends Controller
                 $avatar = "https://cdn.discordapp.com/embed/avatars/" . (abs(crc32($discordId)) % 5) . ".png";
             }
 
-            // Tìm user theo discord_id hoặc email
+            // 1. Tìm user đã liên kết discord_id từ trước
             $user = User::where('discord_id', $discordId)->first();
-            if (!$user) {
-                $user = User::where('email', $email)->first();
+
+            // 2. Nếu chưa liên kết theo discord_id, kiểm tra liên kết theo email
+            if (!$user && !empty($rawEmail)) {
+                $existingUser = User::where('email', $rawEmail)->first();
+                if ($existingUser) {
+                    if (!$isVerified) {
+                        return response()->json([
+                            'success' => false,
+                            'message' => 'Email của tài khoản Discord này chưa được xác minh (unverified). Để tránh bị chiếm đoạt tài khoản, vui lòng đăng nhập bằng mật khẩu hoặc xác minh email trên Discord rồi thử lại.',
+                        ], 409);
+                    }
+                    $user = $existingUser;
+                }
             }
 
             // BẢO MẬT: Ngăn chặn chiếm quyền Admin bằng email Discord trùng email quản trị viên
@@ -383,13 +405,19 @@ class AuthController extends Controller
             }
 
             if (!$user) {
+                // Chưa có user: Nếu email chưa verified hoặc rỗng thì dùng email giả độc lập
+                $finalEmail = ($isVerified && !empty($rawEmail))
+                    ? $rawEmail
+                    : "discord_{$discordId}@dtffshop.local";
+
                 $user = User::create([
                     'name' => $name,
-                    'email' => $email,
+                    'email' => $finalEmail,
                     'discord_id' => $discordId,
                     'avatar' => $avatar,
                     'role' => 'customer',
                     'password' => null,
+                    'email_verified_at' => $isVerified ? now() : null,
                 ]);
             } else {
                 $user->update([

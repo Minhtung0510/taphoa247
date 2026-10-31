@@ -27,6 +27,7 @@ function DiscordCallbackContent() {
     if (executedRef.current) return;
 
     const code = searchParams.get('code');
+    const state = searchParams.get('state');
     const errorParam = searchParams.get('error');
 
     if (errorParam) {
@@ -41,6 +42,12 @@ function DiscordCallbackContent() {
       return;
     }
 
+    if (!state) {
+      setStatus('error');
+      setErrorMessage('Không tìm thấy mã phiên bảo mật (state) từ Discord.');
+      return;
+    }
+
     executedRef.current = true;
 
     // Gửi code lên Backend để xác thực (chỉ chạy 1 lần duy nhất)
@@ -52,6 +59,7 @@ function DiscordCallbackContent() {
       },
       body: JSON.stringify({
         code,
+        state,
         redirect_uri: window.location.origin + '/auth/discord/callback',
       }),
     })

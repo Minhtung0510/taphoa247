@@ -55,6 +55,7 @@ return [
         'client_id' => env('DISCORD_CLIENT_ID', ''),
         'client_secret' => env('DISCORD_CLIENT_SECRET', ''),
         'redirect' => env('DISCORD_REDIRECT_URI', 'http://localhost:3000/auth/discord/callback'),
+        'allowed_redirects' => array_filter(array_map('trim', explode(',', (string) env('DISCORD_ALLOWED_REDIRECTS', 'http://localhost:3000/auth/discord/callback,https://taphoa247.io.vn/auth/discord/callback,http://127.0.0.1:3000/auth/discord/callback')))),
     ],
 
 ];
