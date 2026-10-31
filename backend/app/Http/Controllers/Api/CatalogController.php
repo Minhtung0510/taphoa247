@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Category;
+use App\Models\Coupon;
 use App\Models\Order;
 use App\Models\Product;
 use App\Models\Setting;
@@ -232,11 +233,24 @@ class CatalogController extends Controller
     public function settings(): JsonResponse
     {
         $settings = Cache::remember('store_settings_public', 300, function () {
+            $giftCode = (string) Setting::get('banner_gift_code', '');
+            $coupon = $giftCode !== '' ? Coupon::where('code', $giftCode)->first() : null;
+
             return [
                 'banner_active' => (bool) Setting::get('banner_active', false),
                 'banner_text' => Setting::get('banner_text', ''),
-                'banner_gift_code' => Setting::get('banner_gift_code', ''),
+                'banner_gift_code' => $giftCode,
                 'banner_gift_discount_text' => Setting::get('banner_gift_discount_text', ''),
+                'banner_gift_coupon' => $coupon ? [
+                    'id' => $coupon->id,
+                    'code' => $coupon->code,
+                    'description' => $coupon->description,
+                    'discount_type' => $coupon->discount_type,
+                    'discount_value' => (float) $coupon->discount_value,
+                    'max_discount_amount' => $coupon->max_discount_amount ? (int) $coupon->max_discount_amount : null,
+                    'min_order_amount' => (int) $coupon->min_order_amount,
+                    'is_active' => (bool) $coupon->is_active,
+                ] : null,
                 'store_name' => Setting::get('store_name', 'Tạp Hóa 247'),
                 'store_slogan' => Setting::get('store_slogan', 'Shop Dịch Vụ Số & Acc Game Tự Động 24/7 Uy Tín #1'),
                 'store_hotline' => Setting::get('store_hotline', '0937809305'),

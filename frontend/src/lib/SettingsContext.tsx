@@ -13,6 +13,16 @@ export interface StoreSettings {
   banner_text?: string;
   banner_gift_code?: string;
   banner_gift_discount_text?: string;
+  banner_gift_coupon?: {
+    id: number;
+    code: string;
+    description: string | null;
+    discount_type: 'percent' | 'fixed';
+    discount_value: number;
+    max_discount_amount: number | null;
+    min_order_amount: number;
+    is_active: boolean;
+  } | null;
   store_real_hearts?: number;
   store_maintenance_mode?: boolean;
   [key: string]: any;

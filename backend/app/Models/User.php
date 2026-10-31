@@ -19,6 +19,7 @@ class User extends Authenticatable
         'discord_id',
         'avatar',
         'balance',
+        'email_verified_at',
     ];
 
     protected $hidden = [

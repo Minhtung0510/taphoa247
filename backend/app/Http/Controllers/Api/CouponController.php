@@ -7,6 +7,7 @@ use App\Models\Coupon;
 use App\Models\Product;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 class CouponController extends Controller
 {
@@ -109,6 +110,7 @@ class CouponController extends Controller
         $validated['is_active'] = $request->boolean('is_active', true);
 
         $coupon = Coupon::create($validated);
+        Cache::forget('store_settings_public');
 
         return response()->json([
             'success' => true,
@@ -143,6 +145,7 @@ class CouponController extends Controller
         }
 
         $coupon->update($validated);
+        Cache::forget('store_settings_public');
 
         return response()->json([
             'success' => true,
@@ -158,6 +161,7 @@ class CouponController extends Controller
     {
         $coupon = Coupon::findOrFail($id);
         $coupon->delete();
+        Cache::forget('store_settings_public');
 
         return response()->json([
             'success' => true,
@@ -173,6 +177,7 @@ class CouponController extends Controller
         $coupon = Coupon::findOrFail($id);
         $coupon->is_active = !$coupon->is_active;
         $coupon->save();
+        Cache::forget('store_settings_public');
 
         return response()->json([
             'success' => true,

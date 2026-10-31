@@ -20,7 +20,13 @@ export function SideBanners() {
   const [copiedVoucher, setCopiedVoucher] = useState(false);
 
   const giftVoucherCode = (storeSettings?.banner_gift_code || 'TAPHOA247').trim().toUpperCase();
-  const giftDiscountText = storeSettings?.banner_gift_discount_text || 'Giảm 10% đơn hàng';
+  const giftDiscountText = storeSettings?.banner_gift_discount_text || 'Ưu đãi dành cho bạn';
+  const giftCoupon = storeSettings?.banner_gift_coupon;
+  const giftDiscountHeadline = giftCoupon
+    ? giftCoupon.discount_type === 'percent'
+      ? `🔥 GIẢM ${giftCoupon.discount_value}% ĐƠN HÀNG`
+      : `🔥 GIẢM ${Number(giftCoupon.discount_value).toLocaleString('vi-VN')}Đ`
+    : giftDiscountText;
 
   const handleGiftClick = () => {
     if (!giftOpened) {
@@ -206,9 +212,7 @@ export function SideBanners() {
                       {/* Huy hiệu Mức giảm giá To & Rực Rỡ */}
                       <div className="text-center">
                         <div className="inline-block px-3 py-1 rounded-xl bg-gradient-to-r from-red-600 via-rose-500 to-amber-500 text-white font-black text-xs uppercase tracking-wider shadow-[0_0_15px_rgba(244,63,94,0.7)] animate-pulse">
-                          {storeSettings?.banner_gift_coupon?.discount_type === 'percent'
-                            ? `🔥 GIẢM ${storeSettings.banner_gift_coupon.discount_value}% ĐƠN HÀNG`
-                            : `🔥 GIẢM ${Number(storeSettings?.banner_gift_coupon?.discount_value || 10000).toLocaleString('vi-VN')}Đ`}
+                          {giftDiscountHeadline}
                         </div>
                         {/* Mô tả coupon hiển thị to rõ nếu có */}
                         {storeSettings?.banner_gift_coupon?.description && (
