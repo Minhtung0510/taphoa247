@@ -46,6 +46,7 @@ export function Navbar() {
 
   return (
     <header
+      data-site-navbar
       className={`sticky top-0 z-50 transition-all duration-300 ${scrolled
           ? 'bg-[#050a14]/90 backdrop-blur-xl border-b border-slate-800/50 shadow-lg shadow-black/20'
           : 'bg-transparent border-b border-transparent'

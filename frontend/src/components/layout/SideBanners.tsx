@@ -18,6 +18,26 @@ export function SideBanners() {
   const [copiedPhone, setCopiedPhone] = useState(false);
   const [giftOpened, setGiftOpened] = useState(false);
   const [copiedVoucher, setCopiedVoucher] = useState(false);
+  const [headerOffset, setHeaderOffset] = useState(128);
+
+  useEffect(() => {
+    const header = document.querySelector<HTMLElement>('[data-site-navbar]');
+    if (!header) return;
+
+    const updateOffset = () => {
+      setHeaderOffset(Math.max(112, Math.ceil(header.getBoundingClientRect().bottom + 12)));
+    };
+
+    updateOffset();
+    const observer = new ResizeObserver(updateOffset);
+    observer.observe(header);
+    window.addEventListener('resize', updateOffset);
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateOffset);
+    };
+  }, []);
 
   const giftVoucherCode = (storeSettings?.banner_gift_code || 'TAPHOA247').trim().toUpperCase();
   const giftDiscountText = storeSettings?.banner_gift_discount_text || 'Ưu đãi dành cho bạn';
@@ -72,7 +92,8 @@ export function SideBanners() {
             /* Khi thu gọn: hiển thị nút dock nhỏ gọn bên mép trái */
             <aside
               aria-label="Mở lại bảng tin thông báo"
-              className="fixed left-0 top-36 z-40 hidden min-[1200px]:block animate-in fade-in slide-in-from-left duration-300"
+              className="fixed left-0 z-40 hidden min-[1200px]:block animate-in fade-in slide-in-from-left duration-300"
+              style={{ top: headerOffset }}
             >
               <button
                 onClick={() => setMinimizedLeft(false)}
@@ -88,7 +109,8 @@ export function SideBanners() {
             /* Giao diện đầy đủ: Holographic Cyber HUD Siêu Nổi Bật */
             <aside
               aria-label="Thông báo cửa hàng"
-              className="fixed left-3 xl:left-5 top-28 xl:top-32 z-40 w-56 xl:w-64 max-w-[260px] hidden min-[1200px]:block animate-in fade-in slide-in-from-left duration-300 pointer-events-auto"
+              className="fixed left-3 xl:left-5 z-40 w-56 xl:w-64 max-w-[260px] hidden min-[1200px]:block animate-in fade-in slide-in-from-left duration-300 pointer-events-auto"
+              style={{ top: headerOffset }}
             >
               <div className="cyber-hud-left rounded-3xl relative overflow-hidden backdrop-blur-2xl bg-gradient-to-b from-[#0f1d3a]/98 via-[#0b1428]/98 to-[#050a14]/99 border-2 p-4 space-y-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.9)]">
                 {/* Vệt sáng quét ngang (Shimmer light sweep) */}
@@ -322,7 +344,8 @@ export function SideBanners() {
             /* Khi thu gọn: hiển thị nút dock nhỏ gọn bên mép phải */
             <aside
               aria-label="Mở lại trung tâm hỗ trợ"
-              className="fixed right-0 top-36 z-40 hidden min-[1200px]:block animate-in fade-in slide-in-from-right duration-300"
+              className="fixed right-0 z-40 hidden min-[1200px]:block animate-in fade-in slide-in-from-right duration-300"
+              style={{ top: headerOffset }}
             >
               <button
                 onClick={() => setMinimizedRight(false)}
@@ -338,7 +361,8 @@ export function SideBanners() {
             /* Giao diện đầy đủ: Holographic Cyber HUD */
             <aside
               aria-label="Hỗ trợ khách hàng 24/7"
-              className="fixed right-3 xl:right-5 top-28 xl:top-32 z-40 w-56 xl:w-64 max-w-[260px] hidden min-[1200px]:block animate-in fade-in slide-in-from-right duration-300 pointer-events-auto"
+              className="fixed right-3 xl:right-5 z-40 w-56 xl:w-64 max-w-[260px] hidden min-[1200px]:block animate-in fade-in slide-in-from-right duration-300 pointer-events-auto"
+              style={{ top: headerOffset }}
             >
               <div className="cyber-hud-right rounded-3xl relative overflow-hidden backdrop-blur-2xl bg-gradient-to-b from-[#0f1d3a]/98 via-[#0b1428]/98 to-[#050a14]/99 border-2 p-4 space-y-3.5 shadow-[0_20px_50px_rgba(0,0,0,0.9)]">
                 {/* Vệt sáng quét ngang (Shimmer light sweep) */}
