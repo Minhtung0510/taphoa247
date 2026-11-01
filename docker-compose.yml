@@ -7,8 +7,8 @@ services:
     environment:
       MYSQL_DATABASE: ${DB_DATABASE:-dtffshop}
       MYSQL_USER: ${DB_USERNAME:-dtff_user}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-dtff_secret_password}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-root_secret_password}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the deployment environment}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?Set DB_ROOT_PASSWORD in the deployment environment}
     volumes:
       - mysql_data:/var/lib/mysql
     ports:
@@ -55,7 +55,7 @@ services:
       DB_PORT: 3306
       DB_DATABASE: ${DB_DATABASE:-dtffshop}
       DB_USERNAME: ${DB_USERNAME:-dtff_user}
-      DB_PASSWORD: ${DB_PASSWORD:-dtff_secret_password}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in the deployment environment}
       REDIS_HOST: redis
       REDIS_PORT: 6379
       QUEUE_CONNECTION: redis
@@ -64,8 +64,8 @@ services:
       PAYMENT_GATEWAY: ${PAYMENT_GATEWAY:-sepay}
       SEPAY_API_KEY: ${SEPAY_API_KEY:-""}
       BANK_CODE: ${BANK_CODE:-TPB}
-      ACCOUNT_NO: ${ACCOUNT_NO:-0987654321}
-      ACCOUNT_NAME: ${ACCOUNT_NAME:-"NGUYEN VAN MINH TUNG"}
+      ACCOUNT_NO: ${ACCOUNT_NO:?Set ACCOUNT_NO in the deployment environment}
+      ACCOUNT_NAME: ${ACCOUNT_NAME:?Set ACCOUNT_NAME in the deployment environment}
       WEB2M_TOKEN: ${WEB2M_TOKEN:-""}
       WEB2M_PASSWORD: ${WEB2M_PASSWORD:-""}
       PAYMENT_TEST_MODE: ${PAYMENT_TEST_MODE:-false}

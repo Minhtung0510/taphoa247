@@ -80,6 +80,23 @@ function MarkdownViewer({ content }: { content: string }) {
                 );
               }
 
+              const imageMatch = line.match(/^!\[([^\]]*)\]\((\/images\/[^\s)]+)\)$/);
+              if (imageMatch) {
+                return (
+                  <figure key={lIdx} className="my-5">
+                    <a href={imageMatch[2]} target="_blank" rel="noopener noreferrer" aria-label="Mở ảnh hướng dẫn kích thước đầy đủ">
+                      <img
+                        src={imageMatch[2]}
+                        alt={imageMatch[1] || 'Hướng dẫn sử dụng sản phẩm'}
+                        loading="lazy"
+                        decoding="async"
+                        className="mx-auto h-auto w-full max-w-5xl cursor-zoom-in rounded-xl border border-slate-700/70 transition hover:border-cyan-400"
+                      />
+                    </a>
+                  </figure>
+                );
+              }
+
               if (line.startsWith('### ') || line.startsWith('## ')) {
                 const heading = line.replace(/^#{2,3}\s+/, '');
                 return (

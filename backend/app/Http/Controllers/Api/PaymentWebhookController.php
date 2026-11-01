@@ -78,10 +78,19 @@ class PaymentWebhookController extends Controller
             return response()->json(['success' => true, 'message' => 'Nội dung chuyển khoản rỗng, bỏ qua.']);
         }
 
-        // 3. Tìm đơn hàng chờ thanh toán khớp nội dung
-        $orders = Order::where('status', 'pending')
-            ->whereNotNull('expires_at')
-            ->where('expires_at', '>', now())
+        // Accept recent late payments too; stock is revalidated during fulfillment.
+        $latePaymentCutoff = now()->subMinutes(max(0, (int) config('services.payments.late_payment_grace_minutes', 1440)));
+        $orders = Order::where(function ($query) use ($latePaymentCutoff) {
+            $query->where(function ($pending) {
+                $pending->where('status', 'pending')
+                    ->whereNotNull('expires_at')
+                    ->where('expires_at', '>', now());
+            })->orWhere(function ($timeout) use ($latePaymentCutoff) {
+                $timeout->where('status', 'timeout')
+                    ->whereNotNull('expires_at')
+                    ->where('expires_at', '>', $latePaymentCutoff);
+            });
+        })
             ->get();
 
         $matchedOrder = null;
@@ -127,10 +136,10 @@ class PaymentWebhookController extends Controller
 
         $fulfilled = $this->orderService->fulfillOrder($matchedOrder, $transactionData);
         if ($fulfilled) {
-            Log::info("[SePay Webhook] Đã duyệt và giao tài khoản thành công cho đơn: {$matchedOrder->order_code}");
+            Log::info("[SePay Webhook] Đã ghi nhận thanh toán; hệ thống xử lý giao hàng cho đơn: {$matchedOrder->order_code}");
             return response()->json([
                 'success' => true,
-                'message' => "Đơn hàng {$matchedOrder->order_code} đã được xử lý thành công.",
+                'message' => "Đơn hàng {$matchedOrder->order_code} đã ghi nhận thanh toán và đang xử lý giao hàng.",
             ]);
         }
 

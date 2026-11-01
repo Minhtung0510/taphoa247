@@ -37,9 +37,15 @@ export default function OrderPage({ params }: Props) {
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const urlToken = new URLSearchParams(window.location.search).get('token') || '';
+      const url = new URL(window.location.href);
+      const urlToken = url.searchParams.get('token') || '';
       const storedToken = sessionStorage.getItem(`order_token_${code}`) || '';
       setTokenParam(urlToken || storedToken || '');
+      if (urlToken) {
+        sessionStorage.setItem(`order_token_${code}`, urlToken);
+        url.searchParams.delete('token');
+        window.history.replaceState(null, '', `${url.pathname}${url.search}${url.hash}`);
+      }
     }
   }, [code]);
 
@@ -57,9 +63,7 @@ export default function OrderPage({ params }: Props) {
         headers['Authorization'] = `Bearer ${userAuthToken}`;
       }
 
-      const query = activeToken ? `?token=${encodeURIComponent(activeToken)}` : '';
-
-      const res = await fetch(`${API_BASE_URL}/orders/${code}/details${query}`, { headers });
+      const res = await fetch(`${API_BASE_URL}/orders/${code}/details`, { headers });
       const json = await res.json();
 
       if (json.success && json.data) {
@@ -87,11 +91,11 @@ export default function OrderPage({ params }: Props) {
 
   // Polling tự động kiểm tra thanh toán mỗi 2.5s nếu đơn đang pending (dừng ngay nếu đơn đã hủy, đã thanh toán hoặc hết hạn)
   useEffect(() => {
-    if (!order || order.is_paid || order.status === 'cancelled' || order.status === 'expired' || order.is_expired) return;
+    if (!order || order.status === 'completed' || order.status === 'paid' || order.status === 'cancelled' || order.status === 'expired') return;
 
     const pollInterval = setInterval(() => {
       loadOrder(true);
-    }, 2500);
+    }, order.status === 'processing' ? 5000 : 2500);
 
     return () => clearInterval(pollInterval);
   }, [order?.is_paid, order?.status, order?.is_expired, code, tokenParam, userAuthToken]);
@@ -106,9 +110,7 @@ export default function OrderPage({ params }: Props) {
   }, [order?.is_paid, order?.status, order?.is_expired, countdown]);
 
   const copyCreds = (item: any, idx: number) => {
-    const text = item.parsed?.username
-      ? `${item.parsed.username}:${item.parsed.password || ''}`
-      : item.raw_credentials || '';
+    const text = item.raw_credentials || '';
     navigator.clipboard.writeText(text);
     setCopiedIndex(idx);
     setTimeout(() => setCopiedIndex(null), 2000);
@@ -153,7 +155,29 @@ export default function OrderPage({ params }: Props) {
   }
 
   const effectiveToken = order.access_token || tokenParam || (typeof window !== 'undefined' ? sessionStorage.getItem(`order_token_${code}`) : '') || '';
-  const tokenQuery = effectiveToken ? `?token=${encodeURIComponent(effectiveToken)}` : '';
+  const downloadOrderFile = async (format: 'txt' | 'html') => {
+    const htmlWindow = format === 'html' ? window.open('about:blank', '_blank') : null;
+    try {
+      const headers: Record<string, string> = {};
+      if (effectiveToken) headers['X-Order-Token'] = effectiveToken;
+      if (userAuthToken) headers['Authorization'] = `Bearer ${userAuthToken}`;
+      const response = await fetch(`${API_BASE_URL}/orders/${order.order_code}/download${format === 'html' ? '-html' : ''}`, { headers });
+      if (!response.ok) throw new Error('Không thể tải tệp đơn hàng. Vui lòng đăng nhập lại hoặc mở lại liên kết đơn hàng.');
+      const objectUrl = URL.createObjectURL(await response.blob());
+      if (format === 'html' && htmlWindow) {
+        htmlWindow.location.href = objectUrl;
+      } else if (format === 'txt') {
+        const link = document.createElement('a');
+        link.href = objectUrl;
+        link.download = `don-hang-${order.order_code}.txt`;
+        link.click();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(objectUrl), 60_000);
+    } catch (error) {
+      htmlWindow?.close();
+      window.alert(error instanceof Error ? error.message : 'Tải tệp thất bại.');
+    }
+  };
 
   // ─── TRƯỜNG HỢP 0A: ĐƠN ĐÃ BỊ HỦY / TỪ CHỐI BỞI HỆ THỐNG / ADMIN ───
   if (order.status === 'cancelled' || order.is_cancelled) {
@@ -283,6 +307,22 @@ export default function OrderPage({ params }: Props) {
               </Link>
             </div>
           </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (order.status === 'processing') {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center px-4 py-12">
+        <div className="max-w-xl w-full rounded-3xl border border-cyan-500/30 bg-[#0c1324] p-8 text-center shadow-2xl">
+          <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-cyan-400/20 border-t-cyan-400" />
+          <p className="text-xs font-black uppercase tracking-widest text-emerald-300">Đã nhận thanh toán</p>
+          <h1 className="mt-2 text-2xl font-black text-white">Đơn hàng đang được xử lý</h1>
+          <p className="mt-3 text-sm leading-relaxed text-slate-400">
+            Hệ thống đang hoàn tất việc giao sản phẩm. Trang này tự cập nhật; bạn không cần thanh toán lại.
+          </p>
+          <p className="mt-5 font-mono text-sm text-cyan-300">{order.order_code}</p>
         </div>
       </div>
     );
@@ -460,18 +500,20 @@ export default function OrderPage({ params }: Props) {
 
             {/* Action Downloads */}
             <div className="flex flex-wrap items-center gap-2">
-              <a
-                href={`${API_BASE_URL}/orders/${order.order_code}/download${tokenQuery}`}
+              <button
+                type="button"
+                onClick={() => void downloadOrderFile('txt')}
                 className="btn-secondary !py-2 !px-3.5 text-xs"
               >
                 📥 Tải File TXT
-              </a>
-              <a
-                href={`${API_BASE_URL}/orders/${order.order_code}/download-html${tokenQuery}`}
+              </button>
+              <button
+                type="button"
+                onClick={() => void downloadOrderFile('html')}
                 className="btn-primary !py-2 !px-3.5 text-xs"
               >
                 🎨 Tải HTML 3D
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -494,6 +536,11 @@ export default function OrderPage({ params }: Props) {
 
         {order.items.map((item, idx) => {
           const d = item.parsed;
+          const isValorant =
+            item.category_slug === 'valorant' ||
+            item.account_type === 'valo_acc' ||
+            item.category_name?.toLowerCase() === 'valorant';
+          const isTokenProduct = item.delivery_format === 'token' || item.product_name.toLowerCase().includes('token');
           const isCursor = item.product_name.toLowerCase().includes('cursor');
           const isCs2 =
             item.product_name.toLowerCase().includes('cs2') ||
@@ -501,9 +548,13 @@ export default function OrderPage({ params }: Props) {
             item.product_name.toLowerCase().includes('steam') ||
             Boolean(item.raw_credentials && item.raw_credentials.includes('CS2-'));
           const isKeyType =
+            item.delivery_format === 'key_loader' ||
             isCursor ||
-            isCs2 ||
-            Boolean(item.raw_credentials && (item.raw_credentials.includes('Key') || item.raw_credentials.includes('JG-CF') || item.raw_credentials.includes('License') || item.raw_credentials.includes('CS2-')));
+            isCs2;
+          const isLoginCredentials =
+            !isValorant &&
+            (item.delivery_format === 'raw_text' || (!item.delivery_format && !isTokenProduct)) &&
+            Boolean(d?.username && d?.password);
 
           return (
             <div
@@ -526,7 +577,7 @@ export default function OrderPage({ params }: Props) {
                     onClick={() => copyCreds(item, idx)}
                     className="btn-secondary !py-1.5 !px-3 text-xs"
                   >
-                    {copiedIndex === idx ? '✓ Đã Chép!' : isKeyType ? 'Copy Key' : 'Copy TK:MK'}
+                    {copiedIndex === idx ? '✓ Đã Chép!' : isKeyType ? 'Copy Key' : isValorant ? 'Copy TK:MK' : isTokenProduct ? 'Copy token' : 'Copy thông tin'}
                   </button>
                   {isCursor && (
                     <button
@@ -547,7 +598,7 @@ export default function OrderPage({ params }: Props) {
                       <span>Tải Loader CS2</span>
                     </a>
                   )}
-                  {!isKeyType && (
+                  {isValorant && !isKeyType && (
                     <button
                       onClick={() =>
                         setCheckAccItem({
@@ -626,30 +677,45 @@ export default function OrderPage({ params }: Props) {
               ) : null}
 
               {/* Exact Discord Bot Inventory Card for Game Accounts */}
-              {d && (d.username || d.rank) ? (
+              {isValorant && d ? (
                 <div className="pt-2">
                   <ValorantInventoryCard
                     orderCode={order.order_code}
                     data={d as any}
                     rawCredentials={item.raw_credentials}
                     onDownloadHtml={() => {
-                      window.open(`${API_BASE_URL}/orders/${order.order_code}/download-html`, '_blank');
+                      void downloadOrderFile('html');
                     }}
                     showExportButtons={true}
                   />
                 </div>
               ) : null}
 
-              {/* Raw Log Preview for standard non-key items */}
-              {!isKeyType && (
-                <details className="text-xs text-slate-400 bg-[#050a14]/60 p-3 rounded-xl border border-slate-800/40">
-                  <summary className="cursor-pointer text-slate-400 font-medium hover:text-white transition-colors">
-                    Xem chi tiết chuỗi dữ liệu gốc
-                  </summary>
-                  <pre className="mt-2 whitespace-pre-wrap font-mono text-[11px] select-all overflow-x-auto text-slate-300">
-                    {item.raw_credentials}
-                  </pre>
-                </details>
+              {!isKeyType && !isValorant && (
+                <section className="rounded-xl border border-cyan-500/20 bg-[#050a14]/70 p-4 space-y-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h4 className="text-sm font-semibold text-cyan-200">
+                      {isTokenProduct ? 'Mã / token được giao' : 'Thông tin giao hàng'}
+                    </h4>
+                  </div>
+                  {isLoginCredentials ? (
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      <div className="rounded-lg border border-slate-800 bg-black/40 p-3">
+                        <div className="mb-1 text-[11px] text-slate-500">Tài khoản</div>
+                        <div className="break-all font-mono text-sm text-slate-100 select-all">{d?.username}</div>
+                      </div>
+                      <div className="rounded-lg border border-slate-800 bg-black/40 p-3">
+                        <div className="mb-1 text-[11px] text-slate-500">Mật khẩu</div>
+                        <div className="break-all font-mono text-sm text-slate-100 select-all">{d?.password}</div>
+                      </div>
+                    </div>
+                  ) : (
+                    <pre className="max-h-72 overflow-auto whitespace-pre-wrap break-all rounded-lg border border-slate-800 bg-black/40 p-3 font-mono text-xs leading-relaxed text-slate-100 select-all">
+                      {item.raw_credentials || 'Thông tin đang được cập nhật.'}
+                    </pre>
+                  )}
+                  <p className="text-[11px] text-slate-500">Giữ nguyên định dạng do hệ thống giao để bạn sao chép và sử dụng chính xác.</p>
+                </section>
               )}
             </div>
           );

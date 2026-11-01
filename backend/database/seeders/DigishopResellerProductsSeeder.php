@@ -467,15 +467,45 @@ class DigishopResellerProductsSeeder extends Seeder
             // ═══════════════════════════════════════
             [
                 'category_slug'       => 'muse-ai',
-                'name'                => 'Muse AI – 1B Token (Bảo hành 24h)',
+                'name'                => 'Tài khoản Muse AI | Có Sẵn 1 Tỷ Token | NO 2FA',
                 'slug'                => 'muse-ai-1b-token',
-                'account_type'        => 'digi_muse-ai-1b-token',
-                'digishop_product_id' => '61d5518f-a221-403e-9d48-9e285ee37ffa',
+                'account_type'        => 'muse-ai-1b-token',
+                'cloneus_product_id'  => '15',
+                'digishop_product_id' => null,
                 'price'               => 29000,
-                'cost_price'          => 25000,
-                'warranty_hours'      => 24,
-                'short_description'   => 'Muse AI 1B Token – bàn giao qua email. Bảo hành 24 giờ.',
+                'cost_price'          => 2000,
+                'warranty_hours'      => 1,
+                'short_description'   => 'Muse AI 1 tỷ Token, không 2FA; full mail get code, đã Redeem. Bảo hành 1 đổi 1 trong 1 giờ đầu theo điều kiện.',
+                'details_markdown'    => "## Thông tin sản phẩm\n- Tài khoản Muse AI có sẵn 1 tỷ Token, NO 2FA.\n- Bảo hành 1 đổi 1 trong 1 tiếng đầu nếu account Login bị Banned hoặc Chặn Tạo Video.\n- Giao Full Mail Get Code login tại fviainboxes.com | Đã sử dụng Redeem a code.\n- Tài khoản chưa dính IP Việt Nam.\n\n## Hình hướng dẫn đăng nhập\n![Hướng dẫn đăng nhập Muse AI](/images/products/muse-ai-login-guide.png)\n",
                 'sort_order'          => 1,
+            ],
+            [
+                'category_slug'       => 'muse-ai',
+                'name'                => 'Tài khoản Muse AI | Có Sẵn 10 Tỷ Token',
+                'slug'                => 'muse-ai-10-billion-tokens',
+                'account_type'        => 'muse-ai-10-billion-tokens',
+                'cloneus_product_id'  => '7',
+                'digishop_product_id' => null,
+                'price'               => 39000,
+                'cost_price'          => 15000,
+                'warranty_hours'      => 1,
+                'short_description'   => 'Muse AI có sẵn 10 tỷ Token, full thông tin login đã test. Bảo hành 1 đổi 1 trong 1 giờ đầu theo điều kiện.',
+                'details_markdown'    => "## Thông tin sản phẩm\n- Tài khoản Muse AI có sẵn 10 tỷ Token.\n- Bảo hành 1 đổi 1 trong 1 tiếng đầu nếu account Login bị Banned hoặc Chặn Tạo Video.\n- Mail Fvia Full Thông Tin Login / Đã Test tạo video ok.\n- Hàng chưa dính IP Việt Nam.\n",
+                'sort_order'          => 2,
+            ],
+            [
+                'category_slug'       => 'muse-ai',
+                'name'                => 'Tài khoản Muse AI | Có Sẵn 30 Tỷ Token',
+                'slug'                => 'muse-ai-30-billion-tokens',
+                'account_type'        => 'muse-ai-30-billion-tokens',
+                'cloneus_product_id'  => '14',
+                'digishop_product_id' => null,
+                'price'               => 69000,
+                'cost_price'          => 40000,
+                'warranty_hours'      => 1,
+                'short_description'   => 'Muse AI có sẵn 30 tỷ Token, full thông tin login đã test. Bảo hành 1 đổi 1 trong 1 giờ đầu theo điều kiện.',
+                'details_markdown'    => "## Thông tin sản phẩm\n- Tài khoản Muse AI có sẵn 30 tỷ Token.\n- Bảo hành 1 đổi 1 trong 1 tiếng đầu nếu account Login bị Banned hoặc Chặn Tạo Video.\n- Mail Fvia Full Thông Tin Login / Đã Test tạo video ok.\n- Hàng chưa dính IP Việt Nam.\n",
+                'sort_order'          => 3,
             ],
 
             // ═══════════════════════════════════════
@@ -556,7 +586,11 @@ class DigishopResellerProductsSeeder extends Seeder
                     : ['Tài Khoản Sẵn', '2FA Live', 'Bảo Hành 1-2 Tháng'],
                 'api-sub-credits' => ['Cổng API Sub Credits', 'Không Giới Hạn Hạn Dùng', 'Giao Key Tức Thì'],
                 'google-one'      => ['Chính Chủ 5TB', 'Bảo Hành Full', 'Chia Sẻ Gia Đình'],
-                'muse-ai'         => ['Token 1 Tỷ', 'Bàn Giao Email', 'Bảo Hành 24h'],
+                'muse-ai'         => [
+                    str_contains($p['name'], '30 Tỷ') ? 'Token 30 Tỷ' : (str_contains($p['name'], '10 Tỷ') ? 'Token 10 Tỷ' : 'Token 1 Tỷ'),
+                    str_contains($p['name'], 'NO 2FA') ? 'Không 2FA' : 'Bàn Giao Tài Khoản',
+                    'Bảo Hành 1h',
+                ],
                 'video-ai-tools'  => str_contains($p['name'], 'DigiVideo')
                     ? ['Video Automation', 'Full Template & Source', 'TikTok/Reels/Shorts']
                     : (str_contains($p['name'], 'Engineer')
@@ -566,9 +600,13 @@ class DigishopResellerProductsSeeder extends Seeder
             };
 
             // Lấy mô tả chi tiết từ Digishop Reseller API
-            $detailsMarkdown = $apiMap[$p['digishop_product_id']]['description'] ?? null;
+            $detailsMarkdown = $p['details_markdown']
+                ?? (!empty($p['digishop_product_id']) ? ($apiMap[$p['digishop_product_id']]['description'] ?? null) : null);
 
-            $existing = DB::table('products')->where('account_type', $p['account_type'])->first();
+            $existing = DB::table('products')
+                ->where('account_type', $p['account_type'])
+                ->orWhere('slug', $p['slug'])
+                ->first();
 
             $data = [
                 'category_id'         => $categoryId,
@@ -576,6 +614,7 @@ class DigishopResellerProductsSeeder extends Seeder
                 'slug'                => $p['slug'],
                 'account_type'        => $p['account_type'],
                 'digishop_product_id' => $p['digishop_product_id'],
+                'cloneus_product_id'  => $p['cloneus_product_id'] ?? null,
                 'price'               => $p['price'],
                 'cost_price'          => $p['cost_price'],
                 'warranty_hours'      => $p['warranty_hours'],

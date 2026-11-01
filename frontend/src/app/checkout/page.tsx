@@ -247,11 +247,9 @@ function CheckoutContent() {
         const headers: Record<string, string> = { Accept: 'application/json' };
         if (activeToken) headers['X-Order-Token'] = activeToken;
         if (token) headers['Authorization'] = `Bearer ${token}`;
-        const query = activeToken ? `?token=${encodeURIComponent(activeToken)}` : '';
-
-        const res = await fetch(`${API_BASE_URL}/orders/${order.order_code}/status${query}`, { headers });
+        const res = await fetch(`${API_BASE_URL}/orders/${order.order_code}/status`, { headers });
         const json = await res.json();
-        if (json.success && (json.data.status === 'completed' || json.data.status === 'paid')) {
+        if (json.success && ['completed', 'paid', 'processing'].includes(json.data.status)) {
           clearInterval(checkInterval);
           router.push(`/don-hang/${order.order_code}`);
         }

@@ -43,6 +43,13 @@ class AuthController extends Controller
         }
 
         $email = strtolower(trim((string) $request->email));
+        $otpAttemptsKey = 'otp_attempts_' . md5($email);
+        if ((int) Cache::get($otpAttemptsKey, 0) >= 5) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Mã xác thực OTP đã được gửi đến email của bạn nếu địa chỉ hợp lệ. Vui lòng kiểm tra hộp thư (hoặc mục Spam).',
+            ]);
+        }
 
         // Chống spam gửi OTP (giới hạn 60s / lần)
         $rateKey = 'otp_rate_' . md5($email . '|' . $request->ip());
@@ -66,10 +73,14 @@ class AuthController extends Controller
 
         $code = sprintf('%06d', random_int(100000, 999999));
         Cache::put('otp_' . $email, $code, now()->addMinutes(10));
-        Cache::forget('otp_attempts_' . $email);
         Cache::put($rateKey, time() + 60, 60);
 
-        try {
+        app()->terminating(function () use ($email, $code) {
+            if (function_exists('fastcgi_finish_request')) {
+                fastcgi_finish_request();
+            }
+
+            try {
             Mail::html(
                 '<div style="background:#050a14; color:#f1f5f9; padding:35px 25px; font-family:\'Segoe UI\', Tahoma, Geneva, Verdana, sans-serif; border-radius:14px; max-width:500px; margin:0 auto; border:1px solid #1e293b; text-align:center;">' .
                 '<h2 style="color:#00e5a0; margin:0 0 10px 0; font-size:24px; font-weight:800; letter-spacing:1px;">TẠP HÓA 247</h2>' .
@@ -86,18 +97,16 @@ class AuthController extends Controller
                         ->subject('[TẠP HÓA 247] Mã xác thực OTP đăng ký tài khoản');
                 }
             );
+            } catch (\Throwable $e) {
+                Cache::forget('otp_' . $email);
+                Log::error('[Mail OTP Error] Không thể gửi email: ' . $e->getMessage());
+            }
+        });
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Mã xác thực OTP đã được gửi đến email của bạn nếu địa chỉ hợp lệ. Vui lòng kiểm tra hộp thư (hoặc mục Spam).',
-            ]);
-        } catch (\Throwable $e) {
-            Log::error('[Mail OTP Error] Không thể gửi email: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Không thể gửi email xác thực. Vui lòng kiểm tra lại cấu hình SMTP hoặc liên hệ Admin.',
-            ], 500);
-        }
+        return response()->json([
+            'success' => true,
+            'message' => 'Mã xác thực OTP đã được gửi đến email của bạn nếu địa chỉ hợp lệ. Vui lòng kiểm tra hộp thư (hoặc mục Spam).',
+        ]);
     }
 
     /** Gửi OTP đặt lại mật khẩu; phản hồi chung để không tiết lộ tài khoản tồn tại. */
@@ -111,6 +120,10 @@ class AuthController extends Controller
         }
 
         $email = strtolower(trim((string) $request->email));
+        $attemptsKey = 'password_reset_otp_attempts_' . md5($email);
+        if ((int) Cache::get($attemptsKey, 0) >= 5) {
+            return response()->json(['success' => true, 'message' => 'Nếu email có tài khoản đã xác minh, mã đặt lại mật khẩu sẽ được gửi đến hộp thư.']);
+        }
         $rateKey = 'password_reset_otp_rate_' . md5($email . '|' . $request->ip());
         $emailRateKey = 'password_reset_otp_rate_email_' . md5($email);
         if (Cache::has($rateKey) || Cache::has($emailRateKey)) {
@@ -124,8 +137,12 @@ class AuthController extends Controller
         if ($user) {
             $code = sprintf('%06d', random_int(100000, 999999));
             Cache::put('password_reset_otp_' . $email, $code, now()->addMinutes(10));
-            Cache::forget('password_reset_otp_attempts_' . $email);
-            try {
+            app()->terminating(function () use ($email, $code) {
+                if (function_exists('fastcgi_finish_request')) {
+                    fastcgi_finish_request();
+                }
+
+                try {
                 Mail::html(
                     '<div style="font-family:Arial,sans-serif;max-width:500px;margin:auto;padding:32px;background:#0b1329;color:#f1f5f9;border-radius:14px;text-align:center">' .
                     '<h2 style="color:#00e5a0">TẠP HÓA 247</h2><p>Mã đặt lại mật khẩu của bạn:</p>' .
@@ -135,11 +152,12 @@ class AuthController extends Controller
                         $message->to($email)->subject('[TẠP HÓA 247] Mã đặt lại mật khẩu');
                     }
                 );
-            } catch (\Throwable $e) {
-                Cache::forget('password_reset_otp_' . $email);
-                Log::error('[Mail Password Reset Error] Không thể gửi email: ' . $e->getMessage());
-                // Giữ nguyên phản hồi chung để lỗi SMTP không làm lộ trạng thái tài khoản.
-            }
+                } catch (\Throwable $e) {
+                    Cache::forget('password_reset_otp_' . $email);
+                    Log::error('[Mail Password Reset Error] Không thể gửi email: ' . $e->getMessage());
+                    // Giữ nguyên phản hồi chung để lỗi SMTP không làm lộ trạng thái tài khoản.
+                }
+            });
         }
 
         return response()->json(['success' => true, 'message' => 'Nếu email có tài khoản đã xác minh, mã đặt lại mật khẩu sẽ được gửi đến hộp thư.']);
@@ -159,14 +177,14 @@ class AuthController extends Controller
 
         $email = strtolower(trim((string) $request->email));
         $otpKey = 'password_reset_otp_' . $email;
-        $attemptsKey = 'password_reset_otp_attempts_' . $email;
+        $attemptsKey = 'password_reset_otp_attempts_' . md5($email);
         $cachedOtp = Cache::get($otpKey);
         $attempts = (int) Cache::get($attemptsKey, 0);
         if (!$cachedOtp || !hash_equals((string) $cachedOtp, (string) $request->otp)) {
             $attempts++;
             if ($attempts >= 5) {
                 Cache::forget($otpKey);
-                Cache::forget($attemptsKey);
+                Cache::put($attemptsKey, $attempts, now()->addHour());
                 return response()->json(['success' => false, 'message' => 'Mã OTP đã bị hủy do nhập sai quá số lần. Vui lòng yêu cầu mã mới.'], 422);
             }
             Cache::put($attemptsKey, $attempts, now()->addMinutes(10));
@@ -227,16 +245,15 @@ class AuthController extends Controller
         // Kiểm tra OTP hợp lệ và giới hạn số lần thử sai (5 lần thì hủy OTP)
         // Việc kiểm tra OTP TRƯỚC ngăn chặn triệt để tấn công Enumeration dò quét email đã đăng ký
         $cachedOtp = Cache::get('otp_' . $cleanEmail);
-        $attemptsKey = 'otp_attempts_' . $cleanEmail;
+        $attemptsKey = 'otp_attempts_' . md5($cleanEmail);
         $attempts = (int) Cache::get($attemptsKey, 0);
 
         if (!$cachedOtp || !hash_equals((string) $cachedOtp, (string) trim($request->otp))) {
             $attempts++;
-            Cache::put($attemptsKey, $attempts, now()->addMinutes(10));
+            Cache::put($attemptsKey, $attempts, $attempts >= 5 ? now()->addHour() : now()->addMinutes(10));
 
             if ($attempts >= 5) {
                 Cache::forget('otp_' . $cleanEmail);
-                Cache::forget($attemptsKey);
                 return response()->json([
                     'success' => false,
                     'message' => 'Bạn đã nhập sai mã OTP quá 5 lần. Mã OTP đã bị hủy để đảm bảo an toàn, vui lòng yêu cầu gửi mã mới.',
@@ -581,7 +598,7 @@ class AuthController extends Controller
      */
     public function discordMock(Request $request): JsonResponse
     {
-        if (app()->environment('production') || !config('app.allow_mock_auth', false)) {
+        if (!app()->environment(['local', 'testing']) || !config('app.allow_mock_auth', false)) {
             return response()->json([
                 'success' => false,
                 'message' => 'Phương thức đăng nhập giả lập đã bị vô hiệu hóa trên môi trường sản xuất (Production).',
@@ -732,13 +749,16 @@ class AuthController extends Controller
                         }
                     }
 
-                    $isPaidOrder = in_array($order->status, ['paid', 'completed']);
+                    $isPaidOrder = $order->isPaid();
 
                     return [
                         'id' => $item->id,
                         'position' => $item->position,
                         'product_name' => $item->product?->name ?? 'Tài khoản',
                         'category_name' => $item->product?->category?->name ?? 'Game',
+                        'category_slug' => $item->product?->category?->slug,
+                        'account_type' => $item->product?->account_type,
+                        'delivery_format' => $item->product?->delivery_format,
                         'credentials' => $isPaidOrder ? $item->delivered_credentials : null,
                         'parsed' => $isPaidOrder ? \App\Services\AccountParserService::parse($item->delivered_credentials) : null,
                         'warranty_duration_hours' => $item->warranty_duration_hours,

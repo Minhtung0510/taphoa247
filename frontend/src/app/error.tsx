@@ -19,7 +19,11 @@ export default function ErrorBoundary({
       msg.includes('Cannot find module');
 
     if (isChunkError) {
-      window.location.reload();
+      const recoveryKey = `dtff_chunk_recovery:${window.location.pathname}`;
+      if (!sessionStorage.getItem(recoveryKey)) {
+        sessionStorage.setItem(recoveryKey, '1');
+        window.location.reload();
+      }
     }
   }, [error]);
 

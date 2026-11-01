@@ -10,8 +10,8 @@ use App\Services\OrderService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
-use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class CheckoutController extends Controller
 {
@@ -110,7 +110,7 @@ class CheckoutController extends Controller
         }
 
         // Tự động đối soát thanh toán trực tiếp (SePayService đã có sẵn cache bảo vệ endpoint)
-        if ($order->status === 'pending' && !$order->isExpired()) {
+        if ($order->canAcceptPayment()) {
             try {
                 $matchedTx = $this->paymentGateway->findMatchingTransaction($order);
                 if ($matchedTx) {
@@ -133,47 +133,6 @@ class CheckoutController extends Controller
                 'remaining_seconds' => (int) max(0, $order->expires_at ? now()->diffInSeconds($order->expires_at, false) : 0),
             ],
         ]);
-    }
-
-    /**
-     * Server-Sent Events (SSE) stream theo dõi thanh toán realtime
-     */
-    public function stream(string $orderCode): StreamedResponse
-    {
-        return new StreamedResponse(function () use ($orderCode) {
-            header('Content-Type: text/event-stream');
-            header('Cache-Control: no-cache');
-            header('X-Accel-Buffering: no');
-
-            $start = time();
-            while (time() - $start < 30) { // Giới hạn tối đa 30s giải phóng worker
-                $order = Order::where('order_code', $orderCode)->first();
-
-                if (!$order) {
-                    echo "event: error\ndata: " . json_encode(['message' => 'Không tìm thấy đơn hàng']) . "\n\n";
-                    if (ob_get_level() > 0) ob_flush();
-                    flush();
-                    break;
-                }
-
-                $data = [
-                    'order_code' => $order->order_code,
-                    'status' => $order->status,
-                    'is_paid' => $order->isPaid(),
-                    'remaining_seconds' => max(0, $order->expires_at ? now()->diffInSeconds($order->expires_at, false) : 0),
-                ];
-
-                echo "event: status\ndata: " . json_encode($data) . "\n\n";
-                if (ob_get_level() > 0) ob_flush();
-                flush();
-
-                if ($order->isPaid() || $order->status === 'timeout') {
-                    break;
-                }
-
-                sleep(2);
-            }
-        });
     }
 
     /**

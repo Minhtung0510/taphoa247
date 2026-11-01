@@ -16,6 +16,7 @@ class Product extends Model
         'account_type',
         'digishop_product_id',
         'shopmmo_product_id',
+        'cloneus_product_id',
         'delivery_format',
         'price',
         'cost_price',
@@ -51,7 +52,12 @@ class Product extends Model
      */
     public function isDigishop(): bool
     {
-        return !empty($this->digishop_product_id);
+        return empty($this->cloneus_product_id) && !empty($this->digishop_product_id);
+    }
+
+    public function isCloneus(): bool
+    {
+        return !empty($this->cloneus_product_id);
     }
 
     /**

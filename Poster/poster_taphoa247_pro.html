@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Poster Tạp Hóa 247 - Tháng 10/2026 (Tùy chỉnh toàn bộ Logo)</title>
+<title>Poster Tạp Hóa 247 - Mẫu quảng cáo cập nhật theo chiến dịch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
@@ -20,7 +20,7 @@
   body{
     background:#8aa8d6;font-family:'Nunito',sans-serif;
     display:flex;flex-direction:column;align-items:center;
-    padding:90px 24px 24px;min-height:100vh;gap:16px;
+    padding:300px 24px 24px;min-height:100vh;gap:16px;
   }
 
   /* THANH CÔNG CỤ TẢI ẢNH & CHỌN TẤT CẢ LOGO */
@@ -30,7 +30,7 @@
     background:rgba(15,42,92,.94);
     padding:10px 14px;border-radius:18px;backdrop-filter:blur(8px);
     box-shadow:0 10px 30px rgba(0,0,0,.38);border:2px solid rgba(255,255,255,.25);
-    max-width:1080px;
+    max-width:1120px;
   }
   .toolbar-tip{
     width:100%;text-align:center;color:#bfdbfe;font-size:12.5px;font-weight:800;margin-bottom:2px;
@@ -57,6 +57,37 @@
   .btn-tool:hover{transform:translateY(-2px);filter:brightness(1.1)}
   .btn-tool:active{transform:translateY(0)}
   .btn-tool:disabled{opacity:.65;cursor:wait}
+  .campaign-editor{width:100%;display:grid;grid-template-columns:190px minmax(220px,1fr) auto;gap:8px;align-items:center}
+  .campaign-editor select,.campaign-editor input{
+    min-width:0;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:9px 11px;
+    background:#0b1d3e;color:#fff;font:800 12px 'Nunito',sans-serif;outline:none;
+  }
+  .campaign-editor input::placeholder{color:#a8c2e8}
+  .campaign-editor select:focus,.campaign-editor input:focus{border-color:#fbbf24;box-shadow:0 0 0 3px rgba(251,191,36,.16)}
+  .campaign-note{grid-column:1/-1;color:#bfdbfe;font:700 11px/1.4 'Nunito',sans-serif;padding:0 2px}
+  .product-picker{width:100%;display:grid;grid-template-columns:minmax(260px,1fr) 210px auto auto;gap:8px;align-items:center}
+  .product-picker select{min-width:0;border:1px solid rgba(255,255,255,.2);border-radius:10px;padding:9px 11px;background:#0b1d3e;color:#fff;font:800 12px 'Nunito',sans-serif;outline:none}
+  .product-picker-status{grid-column:1/-1;color:#bfdbfe;font:700 11px/1.4 'Nunito',sans-serif;padding:0 2px}
+  .product-picker-status.error{color:#fca5a5}
+  .campaign-note strong{color:#fbbf24}
+  .editing-copy [data-editable]{outline:2px dashed #f97316;outline-offset:3px;cursor:text}
+  .editing-copy [data-editable]:focus{outline:2px solid #fbbf24;background:rgba(255,255,255,.72)}
+  .featured-product{display:none;padding:24px 30px;border:3px solid #fbbf24;border-radius:28px;background:radial-gradient(circle at 90% 0%,rgba(34,211,238,.2),transparent 38%),linear-gradient(135deg,#fff 0%,#eaf4ff 100%);box-shadow:0 14px 36px rgba(37,99,235,.2)}
+  #capture-poster.single-product #featured-product{display:block}
+  #capture-poster.single-product>.card.hot,#capture-poster.single-product>.grid2{display:none}
+  #capture-poster.single-product{justify-content:space-between}
+  .featured-kicker{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:#dbeafe;color:#1e40af;font-size:14px;font-weight:900}
+  .featured-name{margin-top:12px;color:#0f2a5c;font:800 38px/1.08 'Baloo 2',sans-serif;overflow-wrap:anywhere}
+  .featured-description{margin-top:6px;color:#47628f;font-size:17px;font-weight:800;line-height:1.35}
+  .featured-price-row{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:16px;padding:14px 18px;border-radius:18px;background:#0f2a5c;color:#fff}
+  .featured-price-label{font-size:14px;font-weight:900;color:#bfdbfe}
+  .featured-price{font:800 48px/1.05 'Baloo 2',sans-serif;color:#fbbf24;white-space:nowrap}
+  .featured-warranty{font-size:15px;font-weight:900;color:#fff;background:#2563eb;padding:9px 13px;border-radius:12px;text-align:center}
+  .featured-points{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}
+  .featured-point{padding:12px 13px;border:2px solid #c7e0ff;border-radius:16px;background:#fff;color:#1e3a6d;font-size:14px;font-weight:800;line-height:1.3}
+  .featured-point strong{display:block;color:#2563eb;font-size:11px;letter-spacing:.06em;text-transform:uppercase;margin-bottom:5px}
+  .featured-cta{margin-top:14px;text-align:center;color:#0f2a5c;font-size:16px;font-weight:900}
+  @media(max-width:900px){.campaign-editor{grid-template-columns:1fr 1fr}.campaign-note{grid-column:1/-1}.product-picker{grid-template-columns:1fr auto}.product-picker select:nth-child(2),.product-picker-status{grid-column:1/-1}.featured-points{grid-template-columns:1fr}.featured-price-row{align-items:flex-start;flex-direction:column}.featured-name{font-size:32px}}
 
   /* HIỆU ỨNG BẤM ĐỔI LOGO TRỰC TIẾP TRÊN POSTER */
   .editable-logo{
@@ -73,7 +104,7 @@
 
   /* KHUNG POSTER 1080x1440 */
   .poster{
-    width:1080px;height:1440px;position:relative;overflow:hidden;color:var(--ink);
+    width:1080px;height:1920px;position:relative;overflow:hidden;color:var(--ink);
     background:
       radial-gradient(circle at 92% 4%, #ffffff 0, rgba(255,255,255,0) 30%),
       radial-gradient(circle at 6% 96%, #bddbff 0, rgba(189,219,255,0) 36%),
@@ -149,7 +180,7 @@
     font-weight:900;font-size:14.5px;padding:5px 18px;border-radius:999px;margin-bottom:6px;
   }
   .hero h1{font-family:'Baloo 2';font-weight:800;font-size:48px;line-height:1.03;color:var(--blue-d);letter-spacing:-.5px}
-  .hero h1 span{color:var(--orange);text-decoration:underline;text-decoration-thickness:4px;text-underline-offset:4px}
+  .hero h1 #campaign-highlight{color:var(--orange);text-decoration:underline;text-decoration-thickness:4px;text-underline-offset:4px}
   .hero p{font-size:18.5px;font-weight:800;color:var(--muted);margin-top:6px}
   .hero p b{color:#fff;background:var(--red);padding:2px 9px;border-radius:8px;font-weight:900}
   .chips{display:flex;justify-content:center;gap:10px;margin-top:10px;flex-wrap:wrap}
@@ -265,7 +296,34 @@
 
 <!-- THANH CÔNG CỤ CHỌN LOGO CHO TỪNG MỤC & TẢI ẢNH -->
 <div class="toolbar">
-  <div class="toolbar-tip">💡 <b>Mẹo nhanh:</b> Bạn có thể bấm trực tiếp vào bất kỳ ô Logo/Icon nào trên Poster hoặc dùng các nút bên dưới để đổi ảnh!</div>
+  <div class="toolbar-tip">💡 <b>Bộ công cụ chiến dịch:</b> Chọn góc marketing, nhập hook đang thịnh hành, chỉnh giá/nội dung rồi xuất ảnh mới.</div>
+  <div class="campaign-editor">
+    <select id="campaign-angle" aria-label="Chọn góc marketing" onchange="applyCampaignPreset()">
+      <option value="evergreen">Bán hàng thường ngày</option>
+      <option value="value">Nhấn mạnh giá trị</option>
+      <option value="trust">Nhấn mạnh bảo hành</option>
+      <option value="speed">Nhấn mạnh giao tự động</option>
+      <option value="payday">Chiến dịch ngày lương</option>
+    </select>
+    <input id="campaign-hook" maxlength="64" placeholder="Hook AI bạn muốn đưa lên poster" aria-label="Hook chiến dịch">
+    <button class="btn-tool primary" type="button" onclick="applyCampaignPreset()">✨ Áp dụng nội dung</button>
+    <div class="campaign-note"><strong>Trước khi xuất:</strong> kiểm tra giá, thời hạn và tồn kho hiện tại của gói AI. Chỉ ghi ưu đãi đang chạy.</div>
+  </div>
+  <div class="product-picker">
+    <select id="product-select" aria-label="Chọn tài khoản AI để lên poster">
+      <option value="">Đang nạp danh mục AI cục bộ…</option>
+    </select>
+    <select id="product-appeal" aria-label="Chọn góc thông điệp">
+      <option value="balanced">Tạo điểm nhấn cân bằng</option>
+      <option value="value">Nhấn mạnh giá trị</option>
+      <option value="convenience">Nhấn mạnh tiện lợi</option>
+      <option value="confidence">Nhấn mạnh an tâm</option>
+    </select>
+    <button class="btn-tool primary" id="import-products" type="button" onclick="document.getElementById('product-catalog-file').click()">📂 Nạp danh mục JSON</button>
+    <input type="file" id="product-catalog-file" accept=".json,application/json" hidden>
+    <button class="btn-tool" id="download-catalog-template" type="button" onclick="downloadCatalogTemplate()">⬇ Tải mẫu danh mục</button>
+    <div class="product-picker-status" id="product-picker-status" role="status">Danh mục AI cục bộ • Không gọi API. Chọn gói để tự điền giá và tạo thông điệp quảng bá.</div>
+  </div>
   <input type="file" id="universal-logo-input" accept="image/*" style="display:none" onchange="handleUniversalUpload(event)">
   
   <button class="btn-tool primary" onclick="triggerUpload('slot-brand')">🖼️ Logo Shop</button>
@@ -275,6 +333,9 @@
   <button class="btn-tool" onclick="triggerUpload('slot-cursor')">🤖 Logo Cursor AI</button>
   <button class="btn-tool" onclick="triggerUpload('slot-api')">⚡ Logo API/Google</button>
   <button class="btn-tool reset" onclick="resetAllLogos()" title="Khôi phục lại các icon mặc định">🔄 Reset Icon</button>
+  <button class="btn-tool" id="edit-copy-toggle" type="button" onclick="toggleCopyEditing()">✍️ Sửa chữ & giá</button>
+  <button class="btn-tool reset" type="button" onclick="resetCampaignCopy()">↩️ Reset nội dung</button>
+  <a class="btn-tool" href="https://trends.google.com/trending?geo=VN&amp;hl=vi" target="_blank" rel="noopener noreferrer">📈 Google Trends VN</a>
   
   <button class="btn-tool btn-dl" id="btn-export" onclick="exportPoster()">
     📸 Tải Poster PNG (2x)
@@ -287,10 +348,10 @@
   <!-- 1. WEBSITE BANNER -->
   <a class="web z" href="https://taphoa247.io.vn" target="_blank" rel="noopener">
     <div>
-      <small>⚡ HỆ THỐNG MUA BÁN TỰ ĐỘNG 24/7 — KHÔNG CẦN CHỜ ADMIN</small>
+      <small data-editable>🤖 TÀI KHOẢN AI CHO CÔNG VIỆC &amp; SÁNG TẠO</small>
       <div class="url">taphoa247<b>.io.vn</b></div>
     </div>
-    <div class="go">VÀO WEB NGAY ➜<span>Quét VietQR • Nhận hàng 3 giây</span></div>
+    <div class="go" data-editable>XEM GÓI AI ➜<span>Chọn gói • Xem giá • Đọc điều kiện</span></div>
   </a>
 
   <!-- 2. TOP BAR (LOGO SHOP) -->
@@ -298,39 +359,54 @@
     <div class="brand">
       <div class="logo-box editable-logo" onclick="triggerUpload('slot-brand')" title="Bấm để thay Logo Tạp Hóa 247">
         <div class="logo-inner" id="slot-brand">
-          <img alt="Tạp Hóa 247 Logo" src="data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 200'><defs><linearGradient id='g1' x1='0%' y1='0%' x2='100%' y2='100%'><stop offset='0%' stop-color='%2300f2fe'/><stop offset='100%' stop-color='%23ec4899'/></linearGradient><linearGradient id='g2' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' stop-color='%2338bdf8'/><stop offset='100%' stop-color='%23e879f9'/></linearGradient></defs><rect width='200' height='200' fill='%23061224'/><circle cx='100' cy='102' r='78' fill='none' stroke='url(%23g1)' stroke-width='5'/><path d='M70 50 C70 38,130 38,130 50 L138 76 C140 86,128 92,120 84 L112 76 L88 76 L80 84 C72 92,60 86,62 76 Z' fill='%231e1b4b' stroke='url(%23g1)' stroke-width='4'/><text x='100' y='115' text-anchor='middle' font-family='Arial,sans-serif' font-weight='900' font-size='28' fill='%23fef08a'>TẠP HÓA</text><text x='100' y='162' text-anchor='middle' font-family='Arial,sans-serif' font-weight='900' font-size='52' fill='url(%23g2)'>247</text><text x='100' y='184' text-anchor='middle' font-family='Arial,sans-serif' font-weight='800' font-size='13' fill='%23ffffff'>TÀI KHOẢN AI %26 GAME</text></svg>">
+          <img alt="Tạp Hóa 247 Logo" src="../frontend/public/logo.png">
         </div>
       </div>
       <div>
         <div class="brand-name">TẠP HÓA <b>247</b></div>
-        <div class="brand-sub">Tài Khoản AI &amp; Game Chính Hãng • Giao Tự Động 24/7</div>
+      <div class="brand-sub" data-editable>Tài khoản AI • Cursor • Gemini • Muse</div>
       </div>
     </div>
-    <div class="month">🔥 BẢNG GIÁ THÁNG 10/2026</div>
+    <div class="month" id="poster-month">🔥 BẢNG GIÁ THÁNG</div>
   </div>
 
   <!-- 3. HERO -->
   <div class="hero z">
-    <div class="tag">⏰ Giá sập sàn số lượng có hạn – Vào web chốt đơn ngay!</div>
-    <h1>ACC GAME &amp; AI <span>GIÁ SỐC</span><br>TIẾT KIỆM ĐẾN 93%</h1>
-    <p>Thanh toán VietQR • Nhận acc sau <b>3 GIÂY</b> • Lỗi là <b>1 ĐỔI 1 NGAY</b></p>
+    <div class="tag" id="campaign-tag" data-editable>AI cho công việc &amp; sáng tạo • Chọn gói vừa nhu cầu</div>
+    <h1><span id="campaign-main" data-editable>TÀI KHOẢN AI</span> <span id="campaign-highlight" data-editable>CHỌN GÓI PHÙ HỢP</span><br><span id="campaign-sub" data-editable>GIÁ &amp; THÔNG TIN RÕ RÀNG</span></h1>
+    <p id="campaign-support" data-editable>Cursor AI • Gemini Antigravity • Muse AI — xem chi tiết từng gói trên shop</p>
     <div class="chips">
-      <span class="chip">📦 Kho sẵn 1.000+ Acc</span>
-      <span class="chip">⚡ Mua tự động không cần chờ</span>
-      <span class="chip">🛡️ Bảo hành uy tín 24/7</span>
+      <span class="chip" data-editable>🤖 Gói AI theo nhu cầu</span>
+      <span class="chip" data-editable>💳 Xem giá trước khi mua</span>
+      <span class="chip" data-editable>🛡️ Đọc rõ điều kiện bảo hành</span>
     </div>
   </div>
 
+  <section class="featured-product z" id="featured-product" aria-live="polite">
+    <div class="featured-kicker" id="featured-category">SẢN PHẨM TẠP HÓA 247</div>
+    <h2 class="featured-name" id="featured-name"></h2>
+    <p class="featured-description" id="featured-description"></p>
+    <div class="featured-price-row">
+      <div>
+        <div class="featured-price-label" id="featured-price-label">GIÁ HIỆN TẠI</div>
+        <div class="featured-price" id="featured-price"></div>
+      </div>
+      <div class="featured-warranty" id="featured-warranty"></div>
+    </div>
+    <div class="featured-points" id="featured-points"></div>
+    <div class="featured-cta">Quét mã để xem sản phẩm và đặt mua trên taphoa247.io.vn</div>
+  </section>
+
   <!-- 4. NFA GAME ACCOUNTS (CS2 + VALORANT) -->
   <div class="card hot z">
-    <div class="badge">🔥 BÁN CHẠY SỐ #1</div>
+    <div class="badge" id="campaign-badge" data-editable>🎮 GỢI Ý TÀI KHOẢN GAME</div>
     <div class="c-head">
       <div class="ico editable-logo" id="slot-nfa" onclick="triggerUpload('slot-nfa')" title="Bấm để đổi Icon TÀI KHOẢN GAME NFA" style="background:#fff0e6;border-color:#fed7aa">
         <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="#ea580c" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="4"/><path d="M6 12h4m-2-2v4"/><circle cx="15" cy="11" r="1" fill="#ea580c"/><circle cx="17" cy="13" r="1" fill="#ea580c"/></svg>
       </div>
       <div>
-        <div class="c-title">TÀI KHOẢN GAME NFA (CS2 &amp; VALORANT)</div>
-        <div class="c-sub">Acc sạch 100%, mua xong vào bắn ngay • Tự động đổi nick mới nếu lỗi</div>
+        <div class="c-title" data-editable>TÀI KHOẢN GAME (CS2 &amp; VALORANT)</div>
+        <div class="c-sub" data-editable>Chọn tài khoản theo game, rank và nhu cầu của bạn</div>
       </div>
     </div>
     <div class="nfa-grid">
@@ -338,34 +414,33 @@
       <div class="sub">
         <div class="sub-top">
           <div class="game-tag editable-logo" id="slot-cs2" onclick="triggerUpload('slot-cs2')" title="Bấm để đổi Logo CS2" style="background:linear-gradient(135deg,#f59e0b,#d97706)">CS2</div>
-          <h4>CS2 Prime <small>Steam Prime • Bắn Premier &amp; Comp</small></h4>
+          <h4 data-editable>CS2 Prime <small>Steam Prime • Bắn Premier &amp; Comp</small></h4>
         </div>
         <div class="price-row">
-          <div class="price">29<small>.000đ</small></div>
-          <div class="old">385.000đ</div>
-          <div class="save">Tiết kiệm 92%</div>
+          <div class="price" data-editable data-price-field>Nhập giá</div>
+          <div class="save" data-editable>Chọn gói phù hợp</div>
         </div>
         <ul class="list">
-          <li>Vào game <b>1 chạm bằng SteamLoader</b>, không cần gõ mật khẩu</li>
-          <li>Cam kết <b>Acc sạch 100%</b> (Không VAC / Không Game Ban)</li>
-          <li>Nhận Key kích hoạt tự động ngay sau 3 giây</li>
+          <li data-editable>Vào game <b>1 chạm bằng SteamLoader</b>, không cần gõ mật khẩu</li>
+          <li data-editable>Xem chi tiết tình trạng tài khoản trước khi đặt</li>
+          <li data-editable>Nhận Key kích hoạt tự động ngay sau 3 giây</li>
         </ul>
       </div>
       <!-- VALORANT -->
       <div class="sub">
         <div class="sub-top">
           <div class="game-tag editable-logo" id="slot-val" onclick="triggerUpload('slot-val')" title="Bấm để đổi Logo Valorant" style="background:linear-gradient(135deg,#ef4444,#b91c1c)">VAL</div>
-          <h4>Valorant Rank <small>Có sẵn Rank • Nhiều Skin súng đẹp</small></h4>
+          <h4 data-editable>Valorant Rank <small>Có sẵn Rank • Nhiều Skin súng đẹp</small></h4>
         </div>
         <div class="price-row">
           <div class="from">CHỈ TỪ</div>
-          <div class="price">15<small>.000đ</small></div>
-          <div class="save">Sẵn 300+ Acc</div>
+          <div class="price" data-editable data-price-field>Nhập giá</div>
+          <div class="save" data-editable>Xem kho hiện tại</div>
         </div>
         <ul class="list">
-          <li>Bảo hiểm <b>chủ Off 5 tiếng</b>, leo rank thoải mái không bị đè</li>
-          <li>Xem trước <b>Rank &amp; Kho Skin</b> trực tiếp trên Website</li>
-          <li>Sai mật khẩu hoặc bị khóa? <b>Web tự đổi nick mới</b></li>
+          <li data-editable>Bảo hiểm <b>chủ Off 5 tiếng</b>, leo rank thoải mái không bị đè</li>
+          <li data-editable>Xem trước <b>Rank &amp; Kho Skin</b> trực tiếp trên Website</li>
+          <li data-editable>Sai mật khẩu hoặc bị khóa? <b>Web tự đổi nick mới</b></li>
         </ul>
       </div>
     </div>
@@ -374,51 +449,50 @@
   <!-- 5. AI & CREDITS -->
   <div class="grid2 z">
     <div class="card">
-      <div class="badge" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)">DÂN CODE SĂN ĐÓN</div>
+      <div class="badge" style="background:linear-gradient(135deg,#2563eb,#1d4ed8)" data-editable>AI CHO CÔNG VIỆC</div>
       <div class="c-head">
         <div class="ico editable-logo" id="slot-cursor" onclick="triggerUpload('slot-cursor')" title="Bấm để đổi Logo Cursor AI">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1e40af" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/><line x1="14" y1="4" x2="10" y2="20"/></svg>
         </div>
         <div>
-          <div class="c-title">Cursor AI Pro</div>
-          <div class="c-sub">Trợ lý viết Code AI mạnh nhất hiện nay</div>
+          <div class="c-title" data-editable>Cursor AI Pro</div>
+          <div class="c-sub" data-editable>Công cụ AI hỗ trợ công việc và lập trình</div>
         </div>
       </div>
       <div class="price-row">
-        <div class="price">35<small>.000đ</small></div>
-        <div class="old">500.000đ</div>
-        <div class="save">-93%</div>
+        <div class="price" data-editable data-price-field>Nhập giá</div>
+        <div class="save" data-editable>Chọn gói phù hợp</div>
       </div>
       <ul class="list">
-        <li>Kích hoạt 1 chạm qua Extension, <b>không cần thẻ Visa</b></li>
-        <li>Linh hoạt: <b>Gói Ngày</b> (400 chat) &amp; <b>VIP Pool 30 ngày</b></li>
-        <li>Full model <b>Claude Sonnet / GPT</b> tốc độ cao, không nghẽn</li>
+        <li data-editable>Kích hoạt qua Extension • Xem điều kiện từng gói trên website</li>
+        <li data-editable>Nhiều lựa chọn gói dùng theo nhu cầu</li>
+        <li data-editable>Xem chi tiết tính năng, thời hạn và điều kiện trước khi mua</li>
       </ul>
-      <div class="warranty">🛡️ Bảo hành 1 đổi 1 trọn thời gian gói</div>
+      <div class="warranty" data-editable>🛡️ Bảo hành theo thời hạn của từng gói</div>
     </div>
 
     <div class="card">
-      <div class="badge" style="background:linear-gradient(135deg,#16a34a,#15803d)">KHÔNG LO HẾT HẠN</div>
+      <div class="badge" style="background:linear-gradient(135deg,#16a34a,#15803d)" data-editable>API &amp; DỊCH VỤ SỐ</div>
       <div class="c-head">
         <div class="ico editable-logo" id="slot-api" onclick="triggerUpload('slot-api')" title="Bấm để đổi Logo API Credits" style="background:#ecfdf5;border-color:#a7f3d0">
           <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#15803d" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         </div>
         <div>
-          <div class="c-title">API Credits &amp; Google 5TB</div>
-          <div class="c-sub">Claude • OpenAI Codex • DeepSeek</div>
+          <div class="c-title" data-editable>API Credits &amp; Google 5TB</div>
+          <div class="c-sub" data-editable>Nhiều lựa chọn credits và dịch vụ lưu trữ</div>
         </div>
       </div>
       <div class="price-row">
-        <div class="from">GÓI $20</div>
-        <div class="price">22<small>.000đ</small></div>
-        <div class="save">Rẻ gấp 20 lần</div>
+        <div class="from">CHỌN GÓI</div>
+        <div class="price" data-editable data-price-field>Nhập giá</div>
+        <div class="save" data-editable>Chọn gói phù hợp</div>
       </div>
       <ul class="list">
-        <li><b>Không trừ tiền hàng tháng</b>, dùng bao nhiêu trừ bấy nhiêu</li>
-        <li>Đủ mệnh giá từ <b>$20 (22k)</b> đến <b>$1.000 (1.090k)</b></li>
-        <li>Kèm: <b>Google One 5TB</b> • Acc Discord &amp; Token từ <b>3.000đ</b></li>
+        <li data-editable>Xem mô tả và điều kiện của từng dịch vụ trên website</li>
+        <li data-editable>Chọn gói và mệnh giá đang hiển thị tại thời điểm mua</li>
+        <li data-editable>Khám phá thêm danh mục sản phẩm trên Tạp Hóa 247</li>
       </ul>
-      <div class="warranty">🛡️ Mã nạp dùng vĩnh viễn tới khi hết Credit</div>
+      <div class="warranty" data-editable>🛡️ Thời hạn và điều kiện sử dụng theo mô tả sản phẩm</div>
     </div>
   </div>
 
@@ -453,10 +527,375 @@
     </div>
   </div>
 
-  <div class="slogan z">💙 Uy tín tạo nên thương hiệu – Cảm ơn hàng ngàn anh em đã tin tưởng ủng hộ! 💙</div>
+  <div class="slogan z" id="campaign-slogan" data-editable>Chọn đúng sản phẩm • Nắm rõ thông tin • Mua hàng thuận tiện</div>
 </div>
 
+<script src="poster_ai_catalog.js"></script>
 <script>
+  const CAMPAIGN_COPY_KEY = 'taphoa247_campaign_copy_ai_v3';
+  const POSTER_PRODUCT_KEY = 'taphoa247_selected_product_v1';
+  const POSTER_CATALOG_KEY = 'taphoa247_product_catalog_v1';
+  const DEFAULT_AI_PRODUCT_ID = '179';
+  let posterProducts = [];
+  const CAMPAIGNS = {
+    evergreen: {
+      tag: 'AI cho công việc & sáng tạo • Chọn gói vừa nhu cầu',
+      main: 'TÀI KHOẢN AI',
+      highlight: 'CHỌN GÓI PHÙ HỢP',
+      sub: 'GIÁ & THÔNG TIN RÕ RÀNG',
+      support: 'Cursor AI • Gemini Antigravity • Muse AI — xem chi tiết từng gói trên shop',
+      badge: 'GỢI Ý GÓI AI',
+      slogan: 'Chọn công cụ AI hợp nhu cầu • Xem rõ giá • Mua trực tiếp trên shop'
+    },
+    value: {
+      tag: 'Chọn công cụ AI theo việc bạn cần làm',
+      main: 'ĐẦU TƯ ĐÚNG',
+      highlight: 'CÔNG CỤ AI',
+      sub: 'CHỌN THEO NGÂN SÁCH',
+      support: 'Xem giá và thời hạn từng gói trước khi quyết định',
+      badge: 'NHIỀU MỨC GÓI AI',
+      slogan: 'Chọn gói phù hợp nhu cầu sử dụng và ngân sách của bạn'
+    },
+    trust: {
+      tag: 'Biết rõ gói AI trước khi mua',
+      main: 'XEM KỸ',
+      highlight: 'THÔNG TIN GÓI',
+      sub: 'RÕ GIÁ • RÕ ĐIỀU KIỆN',
+      support: 'Kiểm tra thời hạn, cách sử dụng và bảo hành tại trang sản phẩm',
+      badge: 'THÔNG TIN TỪNG GÓI',
+      slogan: 'Đọc thông tin và điều kiện để chọn gói AI phù hợp'
+    },
+    speed: {
+      tag: 'Chọn gói AI • Đặt hàng ngay trên website',
+      main: 'TÌM GÓI AI',
+      highlight: 'HỢP CÔNG VIỆC',
+      sub: 'MUA ONLINE THUẬN TIỆN',
+      support: 'Xem phương thức bàn giao và thời gian nhận của từng sản phẩm',
+      badge: 'AI SẴN SÀNG CHO BẠN',
+      slogan: 'Chọn gói • Xem cách bàn giao • Đặt hàng trực tuyến'
+    },
+    payday: {
+      tag: 'Chọn gói AI theo ngân sách của bạn',
+      main: 'NÂNG CẤP',
+      highlight: 'CÁCH LÀM VIỆC',
+      sub: 'VỚI CÔNG CỤ AI',
+      support: 'Giá và thời hạn hiển thị theo từng sản phẩm trên website',
+      badge: 'GÓI AI ĐANG CÓ',
+      slogan: 'Xem giá hiện tại và chọn thời hạn phù hợp trước khi mua'
+    }
+  };
+
+  function updatePosterDate() {
+    const now = new Date();
+    const month = new Intl.DateTimeFormat('vi-VN', { month: '2-digit', year: 'numeric' }).format(now);
+    document.getElementById('poster-month').textContent = `🗓️ CẬP NHẬT ${month}`;
+  }
+
+  function formatPosterPrice(value) {
+    return `${Number(value || 0).toLocaleString('vi-VN')}đ`;
+  }
+
+  function getPosterProductPrice(product) {
+    const availableOptions = Array.isArray(product.options)
+      ? product.options.filter((option) => option.is_available && Number(option.price) > 0)
+      : [];
+    if (availableOptions.length) {
+      const cheapest = Math.min(...availableOptions.map((option) => Number(option.price)));
+      return { value: cheapest, prefix: availableOptions.length > 1 || product.options.length > 1 ? 'Từ ' : '' };
+    }
+    return { value: Number(product.price) || 0, prefix: '' };
+  }
+
+  function buildProductHooks(product, priceText) {
+    const warranty = Number(product.warranty_hours) || 0;
+    const shortName = String(product.name || 'sản phẩm này').trim();
+    const category = String(product.category?.name || product.category || '').toLowerCase();
+    const aiUseCase = category.includes('muse')
+      ? (() => {
+          const tokenAmount = shortName.match(/[\d,.]+\s*(?:tỷ|billion)?\s*token/i)?.[0];
+          return {
+            label: 'Sẵn sàng sáng tạo',
+            text: tokenAmount ? `Có sẵn ${tokenAmount} — xem chi tiết gói trước khi mua.` : 'Chọn gói token theo nhu cầu sáng tạo của bạn.',
+          };
+        })()
+      : category.includes('gemini')
+        ? { label: 'AI đa năng', text: 'Chọn thời hạn nâng cấp phù hợp với kế hoạch sử dụng.' }
+        : { label: 'Trợ lực lập trình', text: 'Chọn thời hạn và hạn mức AI phù hợp với nhịp làm việc.' };
+    return [
+      {
+        key: 'value', label: 'Chọn theo ngân sách',
+        text: `${priceText} — xem giá hiện tại và cân đối trước khi mua.`,
+      },
+      {
+        key: 'convenience', ...aiUseCase,
+      },
+      {
+        key: 'confidence', label: warranty > 0 ? 'Biết rõ bảo hành' : 'Mua với đủ thông tin',
+        text: warranty > 0
+          ? `${warranty} giờ theo chính sách sản phẩm. Xem điều kiện cụ thể trước khi đặt.`
+          : `Xem mô tả và điều kiện của ${shortName} trước khi quyết định.`,
+      },
+    ];
+  }
+
+  function showFeaturedProduct(product) {
+    const poster = document.getElementById('capture-poster');
+    const productSelect = document.getElementById('product-select');
+    if (!product) {
+      poster.classList.remove('single-product');
+      try { localStorage.removeItem(POSTER_PRODUCT_KEY); } catch (error) {}
+      document.getElementById('product-picker-status').textContent =
+        'Chọn sản phẩm để tự điền giá và sinh câu quảng cáo theo thông tin hiện tại.';
+      return;
+    }
+
+    const price = getPosterProductPrice(product);
+    if (!price.value) {
+      poster.classList.remove('single-product');
+      document.getElementById('product-picker-status').textContent =
+        'Sản phẩm chưa có giá hợp lệ trong danh mục. Hãy kiểm tra giá trên cửa hàng.';
+      document.getElementById('product-picker-status').classList.add('error');
+      return;
+    }
+
+    const priceText = `${price.prefix}${formatPosterPrice(price.value)}`;
+    const warranty = Number(product.warranty_hours) || 0;
+    const appeal = document.getElementById('product-appeal').value;
+    const hooks = buildProductHooks(product, priceText);
+    const orderedHooks = appeal === 'balanced'
+      ? hooks
+      : [...hooks.filter((hook) => hook.key === appeal), ...hooks.filter((hook) => hook.key !== appeal)];
+
+    document.getElementById('featured-category').textContent = product.category?.name || 'SẢN PHẨM TẠP HÓA 247';
+    document.getElementById('featured-name').textContent = product.name;
+    document.getElementById('featured-description').textContent =
+      (product.short_description || `Sản phẩm ${product.name} tại Tạp Hóa 247.`).slice(0, 180);
+    document.getElementById('featured-price-label').textContent =
+      price.prefix ? 'GIÁ TỪ' : 'GIÁ HIỆN TẠI';
+    document.getElementById('featured-price').textContent = formatPosterPrice(price.value);
+    document.getElementById('featured-warranty').textContent = warranty > 0
+      ? `🛡️ Bảo hành ${warranty} giờ theo gói`
+      : '🛡️ Xem điều kiện bảo hành của gói';
+    document.getElementById('featured-points').replaceChildren(...orderedHooks.map((hook) => {
+      const point = document.createElement('div');
+      point.className = 'featured-point';
+      const label = document.createElement('strong');
+      label.textContent = hook.label;
+      const copy = document.createElement('span');
+      copy.textContent = hook.text;
+      point.append(label, copy);
+      return point;
+    }));
+
+    poster.classList.add('single-product');
+    document.getElementById('product-picker-status').classList.remove('error');
+    document.getElementById('product-picker-status').textContent =
+      'Đã lấy giá từ danh mục cục bộ. Chọn góc thông điệp để đổi thứ tự điểm nhấn.';
+    try { localStorage.setItem(POSTER_PRODUCT_KEY, String(product.id)); } catch (error) {}
+    productSelect.value = String(product.id);
+  }
+
+  function normalizePosterProducts(value) {
+    const source = Array.isArray(value) ? value : value?.data;
+    if (!Array.isArray(source)) throw new Error('invalid-catalog');
+    return source.map((item, index) => ({
+      id: String(item.id ?? index + 1),
+      name: String(item.name || '').trim(),
+      category: { name: typeof item.category === 'string' ? item.category : (item.category?.name || 'Sản phẩm') },
+      price: Number(item.price) || 0,
+      short_description: String(item.short_description || item.description || '').trim(),
+      warranty_hours: Number(item.warranty_hours) || 0,
+      options: Array.isArray(item.options) ? item.options.map((option) => ({
+        name: String(option.name || ''),
+        price: Number(option.price) || 0,
+        is_available: option.is_available !== false,
+      })) : [],
+    })).filter((item) => {
+      const category = item.category.name.toLowerCase();
+      return item.name && (category.includes('cursor') || category.includes('gemini') || category.includes('muse') || category === 'tài khoản ai');
+    });
+  }
+
+  function loadPosterProducts(products) {
+    const productSelect = document.getElementById('product-select');
+    const status = document.getElementById('product-picker-status');
+    const selectedId = productSelect.value || (() => {
+      try { return localStorage.getItem(POSTER_PRODUCT_KEY) || DEFAULT_AI_PRODUCT_ID; } catch (error) { return DEFAULT_AI_PRODUCT_ID; }
+    })();
+
+    try {
+      if (!products) {
+        try {
+          const savedCatalog = JSON.parse(localStorage.getItem(POSTER_CATALOG_KEY) || '[]');
+          products = savedCatalog.length ? savedCatalog : (window.TAPHOA247_AI_CATALOG || []);
+        } catch (error) {
+          products = window.TAPHOA247_AI_CATALOG || [];
+        }
+      }
+      posterProducts = normalizePosterProducts(products);
+      if (!posterProducts.length && products !== window.TAPHOA247_AI_CATALOG) {
+        posterProducts = normalizePosterProducts(window.TAPHOA247_AI_CATALOG || []);
+      }
+      productSelect.replaceChildren(new Option('— Chọn sản phẩm —', ''));
+      posterProducts.forEach((product) => {
+        const price = getPosterProductPrice(product);
+        const option = new Option(
+          `${product.category?.name || 'Sản phẩm'} · ${product.name} · ${price.value ? `${price.prefix}${formatPosterPrice(price.value)}` : 'Chưa có giá'}`,
+          String(product.id),
+        );
+        productSelect.add(option);
+      });
+
+      const saved = posterProducts.find((product) => String(product.id) === String(selectedId))
+        || posterProducts.find((product) => String(product.id) === DEFAULT_AI_PRODUCT_ID);
+      if (saved) showFeaturedProduct(saved);
+      else {
+        productSelect.value = '';
+        document.getElementById('capture-poster').classList.remove('single-product');
+        status.classList.remove('error');
+        status.textContent = posterProducts.length
+          ? `${posterProducts.length} gói AI trong danh mục cục bộ. Chọn sản phẩm để tự điền giá và thông điệp.`
+          : 'Chưa có danh mục AI. Nạp tệp JSON để chọn sản phẩm và giá.';
+      }
+    } catch (error) {
+      posterProducts = [];
+      productSelect.replaceChildren(new Option('Tệp danh mục không hợp lệ', ''));
+      status.classList.add('error');
+      status.textContent = 'Danh mục JSON cần là một danh sách sản phẩm. Tải tệp mẫu để xem định dạng.';
+    }
+  }
+
+  function downloadCatalogTemplate() {
+    const template = [{
+      id: 'cursor-ai-pro',
+      category: 'Tài khoản AI',
+      name: 'Tên sản phẩm',
+      price: 39000,
+      short_description: 'Mô tả ngắn và chính xác về sản phẩm.',
+      warranty_hours: 24,
+      options: [
+        { name: 'Gói cơ bản', price: 39000, is_available: true },
+        { name: 'Gói nâng cao', price: 79000, is_available: true }
+      ]
+    }];
+    const blob = new Blob([JSON.stringify(template, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'poster-products-template.json';
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function importPosterCatalog(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const products = normalizePosterProducts(JSON.parse(String(reader.result || '')));
+        if (!products.length) throw new Error('empty-catalog');
+        posterProducts = products;
+        try { localStorage.setItem(POSTER_CATALOG_KEY, JSON.stringify(products)); } catch (error) {}
+        loadPosterProducts(products);
+        document.getElementById('product-picker-status').textContent =
+          `${products.length} sản phẩm đã nạp từ tệp trên máy và lưu trong trình duyệt.`;
+      } catch (error) {
+        document.getElementById('product-picker-status').classList.add('error');
+        document.getElementById('product-picker-status').textContent =
+          'Không đọc được danh mục. Hãy dùng tệp JSON theo mẫu tải xuống.';
+      }
+    };
+    reader.readAsText(file);
+  }
+
+  function saveCampaignCopy() {
+    const values = Array.from(document.querySelectorAll('#capture-poster [data-editable]'))
+      .map((el) => el.textContent || '');
+    try {
+      localStorage.setItem(CAMPAIGN_COPY_KEY, JSON.stringify({
+        angle: document.getElementById('campaign-angle').value,
+        hook: document.getElementById('campaign-hook').value,
+        values
+      }));
+    } catch (error) {}
+  }
+
+  function applyCampaignPreset(restoreCustom = false) {
+    const angle = document.getElementById('campaign-angle').value;
+    const preset = CAMPAIGNS[angle] || CAMPAIGNS.evergreen;
+    document.getElementById('campaign-tag').textContent =
+      document.getElementById('campaign-hook').value.trim() || preset.tag;
+    document.getElementById('campaign-main').textContent = preset.main;
+    document.getElementById('campaign-highlight').textContent = preset.highlight;
+    document.getElementById('campaign-sub').textContent = preset.sub;
+    document.getElementById('campaign-support').textContent = preset.support;
+    document.getElementById('campaign-badge').textContent = preset.badge;
+    document.getElementById('campaign-slogan').textContent = preset.slogan;
+    if (!restoreCustom) saveCampaignCopy();
+  }
+
+  function toggleCopyEditing() {
+    const poster = document.getElementById('capture-poster');
+    const button = document.getElementById('edit-copy-toggle');
+    const enabled = !poster.classList.contains('editing-copy');
+    poster.classList.toggle('editing-copy', enabled);
+    poster.querySelectorAll('[data-editable]').forEach((el) => {
+      el.contentEditable = String(enabled);
+      el.spellcheck = enabled;
+    });
+    button.textContent = enabled ? '✅ Xong sửa chữ & giá' : '✍️ Sửa chữ & giá';
+    if (!enabled) saveCampaignCopy();
+  }
+
+  function resetCampaignCopy() {
+    try { localStorage.removeItem(CAMPAIGN_COPY_KEY); } catch (error) {}
+    document.getElementById('campaign-angle').value = 'evergreen';
+    document.getElementById('campaign-hook').value = '';
+    applyCampaignPreset();
+    window.location.reload();
+  }
+
+  updatePosterDate();
+  document.getElementById('campaign-angle').addEventListener('change', () => {
+    document.getElementById('campaign-hook').value = '';
+    applyCampaignPreset();
+  });
+  document.getElementById('campaign-hook').addEventListener('input', () => {
+    applyCampaignPreset();
+  });
+  document.getElementById('product-select').addEventListener('change', (event) => {
+    const product = posterProducts.find((item) => String(item.id) === event.target.value);
+    showFeaturedProduct(product || null);
+  });
+  document.getElementById('product-appeal').addEventListener('change', () => {
+    const product = posterProducts.find((item) => String(item.id) === document.getElementById('product-select').value);
+    if (product) showFeaturedProduct(product);
+  });
+  document.getElementById('capture-poster').addEventListener('input', (event) => {
+    if (event.target.matches('[data-editable]')) saveCampaignCopy();
+  });
+
+  try {
+    const savedCopy = JSON.parse(localStorage.getItem(CAMPAIGN_COPY_KEY) || 'null');
+    if (savedCopy) {
+      if (CAMPAIGNS[savedCopy.angle]) document.getElementById('campaign-angle').value = savedCopy.angle;
+      document.getElementById('campaign-hook').value = savedCopy.hook || '';
+      applyCampaignPreset(true);
+      document.querySelectorAll('#capture-poster [data-editable]').forEach((el, index) => {
+        if (typeof savedCopy.values?.[index] === 'string') el.textContent = savedCopy.values[index];
+      });
+    } else {
+      applyCampaignPreset(true);
+    }
+  } catch (error) {
+    applyCampaignPreset(true);
+  }
+  loadPosterProducts();
+  document.getElementById('product-catalog-file').addEventListener('change', (event) => {
+    importPosterCatalog(event.target.files?.[0]);
+    event.target.value = '';
+  });
+
   // Tạo 3 mã QR
   function mk(id, text, color){
     try{
@@ -549,6 +988,17 @@
     const poster = document.getElementById('capture-poster');
     const originalText = btn.innerHTML;
 
+    const missingPrices = poster.classList.contains('single-product') ? [] : Array.from(poster.querySelectorAll('[data-price-field]'))
+      .filter((el) => !/\d/.test(el.textContent || '') || /nhập giá/i.test(el.textContent || ''));
+    if (missingPrices.length) {
+      alert('Trước khi xuất, bấm “Sửa chữ & giá” và nhập giá hiện tại cho tất cả sản phẩm.');
+      if (!poster.classList.contains('editing-copy')) toggleCopyEditing();
+      missingPrices[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+      missingPrices[0].focus();
+      return;
+    }
+    if (!confirm('Bạn đã kiểm tra lại giá, tồn kho, nội dung bảo hành và ưu đãi hiện tại chưa?')) return;
+
     try {
       btn.disabled = true;
       btn.innerHTML = '⏳ Đang xử lý ảnh 2x...';
@@ -569,7 +1019,10 @@
       });
 
       const link = document.createElement('a');
-      link.download = 'Poster-TapHoa247-10-2026.png';
+      const dateStamp = new Intl.DateTimeFormat('sv-SE', {
+        timeZone: 'Asia/Bangkok', year: 'numeric', month: '2-digit', day: '2-digit'
+      }).format(new Date());
+      link.download = `Poster-TapHoa247-${dateStamp}.png`;
       link.href = canvas.toDataURL('image/png', 1.0);
       link.click();
 

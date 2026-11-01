@@ -36,9 +36,7 @@ function WarrantyContent() {
       const headers: Record<string, string> = { Accept: 'application/json' };
       if (activeToken) headers['X-Order-Token'] = activeToken;
       if (userAuthToken) headers['Authorization'] = `Bearer ${userAuthToken}`;
-      const query = activeToken ? `?token=${encodeURIComponent(activeToken)}` : '';
-
-      const res = await fetch(`${API_BASE_URL}/orders/${codeToFetch.trim()}/warranty-eligibility${query}`, { headers });
+      const res = await fetch(`${API_BASE_URL}/orders/${codeToFetch.trim()}/warranty-eligibility`, { headers });
       const json = await res.json();
       if (!res.ok || !json.success) {
         throw new Error(json.message || 'Không tìm thấy đơn hàng hoặc đơn chưa thanh toán.');

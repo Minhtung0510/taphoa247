@@ -86,6 +86,9 @@ class DeliveryController extends Controller
                             'position' => $item->position,
                             'product_name' => $item->product?->name ?? 'Tài khoản Game',
                             'category_name' => $item->product?->category?->name ?? 'Game',
+                            'category_slug' => $item->product?->category?->slug,
+                            'account_type' => $item->product?->account_type,
+                            'delivery_format' => $item->product?->delivery_format,
                         ];
                     }),
                 ],
@@ -99,6 +102,9 @@ class DeliveryController extends Controller
                 'position' => $item->position,
                 'product_name' => $item->product?->name ?? 'Tài khoản Game',
                 'category_name' => $item->product?->category?->name ?? 'Game',
+                'category_slug' => $item->product?->category?->slug,
+                'account_type' => $item->product?->account_type,
+                'delivery_format' => $item->product?->delivery_format,
                 'raw_credentials' => $item->delivered_credentials,
                 'parsed' => $parsed,
                 'warranty_expires_at' => $item->warranty_expires_at?->toIso8601String(),
@@ -188,6 +194,9 @@ class DeliveryController extends Controller
                 'position' => $position,
                 'total_items' => $order->items->count(),
                 'product_name' => $item->product?->name ?? 'Tài khoản Game',
+                'category_slug' => $item->product?->category?->slug,
+                'account_type' => $item->product?->account_type,
+                'delivery_format' => $item->product?->delivery_format,
                 'parsed' => $parsed,
                 'raw' => $item->delivered_credentials,
                 'warranty_expires_at' => $item->warranty_expires_at?->toIso8601String(),
@@ -217,6 +226,9 @@ class DeliveryController extends Controller
             return [
                 'position' => $it->position + 1,
                 'name' => $it->product?->name ?? 'Tài khoản Game',
+                'category_slug' => $it->product?->category?->slug,
+                'account_type' => $it->product?->account_type,
+                'delivery_format' => $it->product?->delivery_format,
                 'data' => $this->parseAccountCredentials($it->delivered_credentials),
                 'raw' => (string) $it->delivered_credentials,
             ];
@@ -228,18 +240,21 @@ class DeliveryController extends Controller
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src https://cdn.tailwindcss.com 'unsafe-inline'; style-src https://cdn.tailwindcss.com 'unsafe-inline'; img-src https://media.valorant-api.com data:; font-src data:; connect-src 'none';">
-    <title>TẠP HÓA 247 - Tra Cứu Kho Acc #{$orderCodeSafe}</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src https://media.valorant-api.com data:; font-src data:; connect-src 'none';">
+    <title>TẠP HÓA 247 - Chi Tiết Đơn Hàng #{$orderCodeSafe}</title>
     <style>
-        body { background: #070a10; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        * { box-sizing: border-box; }
+        body { background: #070a10; color: #e2e8f0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; max-width: 64rem; margin: 0 auto; padding: 1.5rem; }
+        #acc-list > div { background: #0b1019; border: 1px solid #263244; border-radius: 1rem; margin: 1.5rem 0; padding: 1.25rem; overflow-wrap: anywhere; }
+        button { background: #1e293b; color: #e2e8f0; border: 1px solid #334155; border-radius: .75rem; padding: .7rem 1rem; cursor: pointer; }
+        @media print { body { background: white; color: black; } button { display: none; } #acc-list > div { break-inside: avoid; border-color: #aaa; } }
     </style>
 </head>
 <body class="p-4 sm:p-8 max-w-5xl mx-auto space-y-8">
-    <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:1rem;padding-bottom:1rem;border-bottom:1px solid #263244">
         <div>
             <div class="text-[#00f59b] font-black text-sm tracking-wider">TẠP HÓA 247</div>
-            <h1 class="text-xl sm:text-2xl font-black text-white">HỆ THỐNG TRA CỨU KHO TÀI KHOẢN GAME</h1>
+            <h1 class="text-xl sm:text-2xl font-black text-white">THÔNG TIN SẢN PHẨM ĐÃ GIAO</h1>
             <p class="text-xs text-slate-400 mt-0.5">Mã đơn: <b class="text-white">#{$orderCodeSafe}</b> | Khách hàng: {$customerNameSafe}</p>
         </div>
         <button id="btn-print-receipt" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700">In / Lưu PDF</button>
@@ -293,6 +308,46 @@ class DeliveryController extends Controller
 
         items.forEach((item, index) => {
             const d = item.data || {};
+            const isValorant = item.category_slug === 'valorant' || item.account_type === 'valo_acc';
+            if (!isValorant) {
+                const title = item.delivery_format === 'token'
+                    ? 'MÃ / TOKEN ĐƯỢC GIAO'
+                    : item.delivery_format === 'key_loader'
+                        ? 'MÃ KÍCH HOẠT ĐƯỢC GIAO'
+                        : 'THÔNG TIN GIAO HÀNG';
+                const isLogin = item.delivery_format === 'raw_text' && d.username && d.password;
+                const details = isLogin
+                    ? `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:.75rem;margin-top:1rem">
+                        <div style="padding:.85rem;border:1px solid #263244;border-radius:.75rem;background:#050a14"><div style="margin-bottom:.35rem;color:#94a3b8;font-size:.7rem">TÀI KHOẢN</div><div style="color:#e2e8f0;font: .85rem/1.5 ui-monospace,SFMono-Regular,monospace;overflow-wrap:anywhere;user-select:all">\${esc(d.username)}</div></div>
+                        <div style="padding:.85rem;border:1px solid #263244;border-radius:.75rem;background:#050a14"><div style="margin-bottom:.35rem;color:#94a3b8;font-size:.7rem">MẬT KHẨU</div><div style="color:#e2e8f0;font: .85rem/1.5 ui-monospace,SFMono-Regular,monospace;overflow-wrap:anywhere;user-select:all">\${esc(d.password)}</div></div>
+                    </div>`
+                    : `<pre style="margin:.5rem 0 0;padding:1rem;border:1px solid #263244;border-radius:.75rem;background:#050a14;color:#e2e8f0;font: .85rem/1.6 ui-monospace,SFMono-Regular,monospace;white-space:pre-wrap;overflow-wrap:anywhere;user-select:all">\${esc(item.raw || 'Thông tin đang được cập nhật.')}</pre>`;
+                const card = document.createElement('div');
+                card.style.cssText = 'margin:1.5rem 0;padding:1.25rem;border:1px solid rgba(34,211,238,.35);border-radius:1rem;background:#0b1019;box-shadow:0 12px 32px rgba(0,0,0,.25);overflow-wrap:anywhere';
+                card.innerHTML = `
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;flex-wrap:wrap">
+                        <div>
+                            <div style="color:#00e5a0;font-size:.75rem;font-weight:800;letter-spacing:.08em">SẢN PHẨM #\${index + 1}</div>
+                            <h2 style="margin:.4rem 0 0;font-size:1.25rem;font-weight:800;color:#fff">\${esc(item.name)}</h2>
+                        </div>
+                        <button type="button" class="copy-delivery" style="background:#0e7490;border:0;color:#fff;font-weight:700">Sao chép toàn bộ</button>
+                    </div>
+                    <div style="margin-top:1.25rem;color:#67e8f9;font-size:.7rem;font-weight:800;letter-spacing:.08em">\${title}</div>
+                    \${details}
+                    <p style="margin:.65rem 0 0;color:#94a3b8;font-size:.75rem">Giữ nguyên định dạng giao hàng để sao chép và sử dụng chính xác.</p>
+                `;
+                container.appendChild(card);
+                card.querySelector('.copy-delivery')?.addEventListener('click', async (event) => {
+                    const button = event.currentTarget;
+                    try {
+                        await navigator.clipboard.writeText(item.raw || '');
+                        button.textContent = 'Đã sao chép';
+                    } catch {
+                        window.prompt('Sao chép toàn bộ thông tin:', item.raw || '');
+                    }
+                });
+                return;
+            }
             const rankIcon = getRankIcon(d.rank);
 
             const tierCounts = { Ultra: 0, Exclusive: 0, Premium: 0, Deluxe: 0, Select: 0 };
@@ -396,7 +451,7 @@ class DeliveryController extends Controller
                     </div>
 
                     <div class="border-t border-slate-800/80 pt-4 flex flex-wrap items-center justify-between gap-2 text-[11px] text-slate-500 font-mono">
-                        <div>TẠP HÓA 247 • Hệ thống tra cứu kho đồ tự động | Mã đơn: #{$orderCodeSafe}</div>
+                        <div>TẠP HÓA 247 • Thông tin sản phẩm đã giao | Mã đơn: #{$orderCodeSafe}</div>
                         <div class="text-[#00f59b] font-bold">TẠP HÓA 247</div>
                     </div>
                 </div>

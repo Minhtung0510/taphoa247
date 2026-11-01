@@ -3,7 +3,6 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
 import { API_BASE_URL } from '@/lib/api';
 import { useAuth } from '@/lib/AuthContext';
 import { AdminRevenueView } from '@/components/admin/AdminRevenueView';
@@ -18,13 +17,11 @@ import { AdminUsersView } from '@/components/admin/AdminUsersView';
 import { AdminSettingsView } from '@/components/admin/AdminSettingsView';
 
 export default function AdminPage() {
-  const router = useRouter();
-  const { user, token, setAuthSession, logout } = useAuth();
+  const { user, token, logout } = useAuth();
 
   const [mounted, setMounted] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [isDirectAdmin, setIsDirectAdmin] = useState(false);
-  const [hasSecret, setHasSecret] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Xác thực quyền Admin tuyệt đối qua Server (không tin cậy LocalStorage)
@@ -34,18 +31,6 @@ export default function AdminPage() {
     const checkAdminAccess = async () => {
       try {
         const rawToken = localStorage.getItem('dtff_auth_token') || localStorage.getItem('admin_token');
-        const params = new URLSearchParams(window.location.search);
-        const secret = params.get('secret') || params.get('key');
-
-        let unlocked = false;
-        if (secret === 'dtff2026') {
-          sessionStorage.setItem('dtff_adm_gate', 'unlocked');
-          unlocked = true;
-        } else if (sessionStorage.getItem('dtff_adm_gate') === 'unlocked') {
-          unlocked = true;
-        }
-        setHasSecret(unlocked);
-
         // Nếu không có token -> Chắc chắn không có quyền Admin
         if (!rawToken) {
           setIsDirectAdmin(false);
@@ -115,11 +100,6 @@ export default function AdminPage() {
     }
     return null;
   }, [token]);
-
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loginError, setLoginError] = useState<string | null>(null);
-  const [loggingIn, setLoggingIn] = useState(false);
 
   const [tab, setTab] = useState<'dashboard' | 'revenue' | 'products' | 'stock' | 'orders' | 'warranty' | 'settings' | 'coupons' | 'users'>('dashboard');
   const [dashboardData, setDashboardData] = useState<any>(null);
@@ -215,41 +195,6 @@ export default function AdminPage() {
   const [newPrice, setNewPrice] = useState<number>(0);
 
 
-
-  // Đăng nhập quản trị viên
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoginError(null);
-    setLoggingIn(true);
-    try {
-      const res = await fetch(`${API_BASE_URL}/auth/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
-      const json = await res.json();
-      if (json.success && json.data.token) {
-        if (json.data.user.role !== 'admin' && !json.data.user.is_admin) {
-          setLoginError('Tò mò cái đéo gì cu em ? hacker lỏ à ?');
-          return;
-        }
-        setAuthSession(json.data.token, json.data.user);
-        setIsDirectAdmin(true);
-        setEmail('');
-        setPassword('');
-        loadData(json.data.token);
-      } else {
-        setLoginError(json.message || 'Email hoặc mật khẩu không chính xác.');
-      }
-    } catch (err: any) {
-      setLoginError(err.message || 'Lỗi kết nối máy chủ.');
-    } finally {
-      setLoggingIn(false);
-    }
-  };
 
   const authHeaders = useMemo(() => ({
     'Content-Type': 'application/json',
@@ -616,20 +561,10 @@ export default function AdminPage() {
   // Bật/tắt trạng thái bán của sản phẩm
   const handleToggleActive = async (id: number, currentState: boolean) => {
     try {
-      const targetProduct = products.find((p) => p.id === id);
-      if (!targetProduct) return;
       const res = await fetch(`${API_BASE_URL}/admin/products/${id}`, {
         method: 'PUT',
         headers: authHeaders,
-        body: JSON.stringify({
-          name: targetProduct.name,
-          category_id: targetProduct.category_id || targetProduct.category?.id || 1,
-          account_type: targetProduct.account_type,
-          price: targetProduct.price,
-          warranty_hours: targetProduct.warranty_hours,
-          is_off_mode: targetProduct.is_off_mode,
-          is_active: !currentState,
-        }),
+        body: JSON.stringify({ is_active: !currentState }),
       });
       const json = await res.json();
       if (json.success) {
@@ -1126,92 +1061,18 @@ export default function AdminPage() {
     return <div className="min-h-[75vh]" />;
   }
 
-  // Nếu chưa đăng nhập Admin:
+  // Keep the admin route hidden for non-admin sessions; API authorization remains authoritative.
   if (!isDirectAdmin) {
-    // Nếu có mã bí mật (?secret=dtff2026): Cho phép hiển thị form đăng nhập Admin
-    if (hasSecret) {
-      return (
-        <div className="min-h-[75vh] flex items-center justify-center px-4 py-16">
-          <div className="max-w-md w-full space-y-6">
-            <div className="text-center space-y-2">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-[#00e5a0]/10 border border-[#00e5a0]/30 text-[#00e5a0] text-3xl shadow-[0_0_25px_rgba(0,229,160,0.2)]">
-                ⚡
-              </div>
-              <h1 className="text-2xl font-black text-white tracking-tight">Tạp Hóa 247 Control Center</h1>
-              <p className="text-xs text-slate-400">Đăng nhập tài khoản Quản trị viên để quản lý hệ thống</p>
-            </div>
-
-            {loginError && (
-              <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-400 text-xs flex items-center gap-3">
-                <span className="text-base">⚠️</span>
-                <span>{loginError}</span>
-              </div>
-            )}
-
-            <form onSubmit={handleLogin} autoComplete="off" className="p-7 bg-[#12151c] border border-[#232834] rounded-3xl space-y-4 shadow-2xl">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
-                  Email Quản Trị
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="admin@taphoa247.io.vn"
-                  autoComplete="off"
-                  className="w-full bg-[#090b0f] border border-[#232834] text-white p-3.5 rounded-xl text-sm outline-none focus:border-[#00e5a0] focus:ring-1 focus:ring-[#00e5a0] transition-all"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
-                  Mật Khẩu
-                </label>
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••••••"
-                  autoComplete="new-password"
-                  className="w-full bg-[#090b0f] border border-[#232834] text-white p-3.5 rounded-xl text-sm outline-none focus:border-[#00e5a0] focus:ring-1 focus:ring-[#00e5a0] transition-all"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loggingIn}
-                className="w-full py-3.5 bg-gradient-to-r from-[#00e5a0] to-[#00c4ff] hover:brightness-110 active:scale-[0.99] text-[#050a14] font-black rounded-xl text-sm transition-all shadow-lg shadow-[#00e5a0]/25 disabled:opacity-50 cursor-pointer"
-              >
-                {loggingIn ? 'Đang xác thực quản trị...' : 'ĐĂNG NHẬP QUẢN TRỊ'}
-              </button>
-            </form>
-          </div>
-        </div>
-      );
-    }
-
-    // Nếu KHÔNG có mã bí mật: trả về 404 ngay lập tức (giấu kín hoàn toàn đường dẫn /admin)
     return (
       <div className="min-h-[75vh] flex items-center justify-center px-4 py-20">
         <div className="max-w-md w-full text-center space-y-6 p-8 rounded-3xl bg-[#12151c] border border-[#232834] shadow-2xl">
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-3xl">
-            🔒
-          </div>
+          <div className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-3xl">🔒</div>
           <div>
-            <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-200 to-slate-500 font-mono tracking-widest">
-              404
-            </div>
+            <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-slate-200 to-slate-500 font-mono tracking-widest">404</div>
             <h1 className="text-xl font-bold text-white mt-2">Trang Không Tồn Tại</h1>
-            <p className="text-sm text-slate-400 mt-2">
-              Đường dẫn này không tồn tại hoặc bạn không có quyền truy cập.
-            </p>
+            <p className="text-sm text-slate-400 mt-2">Đường dẫn này không tồn tại hoặc bạn không có quyền truy cập.</p>
           </div>
-          <Link
-            href="/"
-            className="inline-flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-[#00e5a0] to-[#00c4ff] text-[#050a14] rounded-xl text-xs font-black transition-all shadow-lg active:scale-95 cursor-pointer"
-          >
+          <Link href="/" className="inline-flex items-center justify-center gap-2 w-full py-3 bg-gradient-to-r from-[#00e5a0] to-[#00c4ff] text-[#050a14] rounded-xl text-xs font-black transition-all shadow-lg active:scale-95 cursor-pointer">
             <span>←</span> Quay về trang chủ
           </Link>
         </div>

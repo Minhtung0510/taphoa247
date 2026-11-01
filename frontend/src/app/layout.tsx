@@ -75,6 +75,7 @@ import { AuthProvider } from '@/lib/AuthContext';
 import { SettingsProvider } from '@/lib/SettingsContext';
 import { AuthModal } from '@/components/auth/AuthModal';
 import { AntiTamper } from '@/components/security/AntiTamper';
+import { ChunkLoadRecovery } from '@/components/security/ChunkLoadRecovery';
 import { SideBanners } from '@/components/layout/SideBanners';
 import { AiGamingMascot } from '@/components/mascot/AiGamingMascot';
 import { API_BASE_URL } from '@/lib/api';
@@ -112,6 +113,7 @@ export default async function RootLayout({
       </head>
       <body className="bg-[#050a14] text-[#e8edf5] antialiased min-h-screen flex flex-col font-sans">
         <AntiTamper />
+        <ChunkLoadRecovery />
         <SettingsProvider initialSettings={initialSettings}>
           <AuthProvider>
             <Navbar />

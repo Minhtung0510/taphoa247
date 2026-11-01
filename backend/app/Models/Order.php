@@ -66,7 +66,20 @@ class Order extends Model
 
     public function isPaid(): bool
     {
-        return in_array($this->status, ['paid', 'completed']);
+        return in_array($this->status, ['paid', 'processing', 'completed'], true);
+    }
+
+    public function canAcceptPayment(): bool
+    {
+        if ($this->status === 'pending') {
+            return !$this->isExpired();
+        }
+
+        $graceMinutes = max(0, (int) config('services.payments.late_payment_grace_minutes', 1440));
+        return $this->status === 'timeout'
+            && $graceMinutes > 0
+            && $this->expires_at
+            && $this->expires_at->greaterThan(now()->subMinutes($graceMinutes));
     }
 
     public function isPending(): bool

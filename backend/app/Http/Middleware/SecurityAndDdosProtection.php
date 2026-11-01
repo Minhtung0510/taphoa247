@@ -10,6 +10,9 @@ use Symfony\Component\HttpFoundation\Response;
 
 class SecurityAndDdosProtection
 {
+    private const FLOOD_WINDOW_SECONDS = 10;
+    private const FLOOD_LIMIT = 80;
+
     /**
      * Chặn tấn công DDoS, quét tự động (Flood/Spam) và gắn Header bảo mật
      */
@@ -32,13 +35,14 @@ class SecurityAndDdosProtection
             ], 403);
         }
 
-        // 2. Chặn Flood DDoS nhanh (Quá 80 requests trong vòng 10 giây từ 1 IP)
+        // 2. Fixed window flood limit (80 requests per 10 seconds per IP).
         $isLocal = app()->environment('local') || in_array($ip, ['127.0.0.1', '::1', 'localhost'], true);
         if (!$isLocal) {
             $floodKey = 'flood_count_' . md5($ip);
-            $requestCount = (int) Cache::get($floodKey, 0);
+            Cache::add($floodKey, 0, self::FLOOD_WINDOW_SECONDS);
+            $requestCount = (int) Cache::increment($floodKey);
 
-            if ($requestCount > 300) {
+            if ($requestCount > self::FLOOD_LIMIT) {
                 Log::warning("[DDoS/Flood] IP {$ip} bị chặn tạm thời do gửi request quá nhanh ({$requestCount} req/10s).");
                 return response()->json([
                     'success' => false,
@@ -46,7 +50,6 @@ class SecurityAndDdosProtection
                 ], 429)->header('Retry-After', '10');
             }
 
-            Cache::put($floodKey, $requestCount + 1, 10);
         }
 
         // 3. Thực thi request

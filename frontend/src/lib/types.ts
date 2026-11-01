@@ -46,6 +46,9 @@ export interface OrderItem {
   position: number;
   product_name: string;
   category_name?: string;
+  category_slug?: string;
+  account_type?: string;
+  delivery_format?: string;
   raw_credentials?: string;
   parsed?: {
     username: string;

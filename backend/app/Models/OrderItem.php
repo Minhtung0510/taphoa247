@@ -25,6 +25,9 @@ class OrderItem extends Model
         'digishop_order_id',
         'digishop_status',
         'shopmmo_order_id',
+        'cloneus_order_id',
+        'cloneus_status',
+        'fulfillment_state',
     ];
 
     protected $hidden = [

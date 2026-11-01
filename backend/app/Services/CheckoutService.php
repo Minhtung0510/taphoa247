@@ -33,6 +33,10 @@ class CheckoutService
         $optionId = $data['option_id'] ?? null;
 
         return DB::transaction(function () use ($productId, $quantity, $customerName, $customerEmail, $customerPhone, $userId, $couponCode, $optionId) {
+            if ($userId) {
+                \App\Models\User::whereKey($userId)->lockForUpdate()->first();
+            }
+
             // Chống găm giữ kho (Anti-Stock Hoarding DoS): giới hạn tối đa 2 đơn pending chưa thanh toán
             $pendingQuery = Order::where('status', 'pending')->where('expires_at', '>', now());
             if ($userId) {
@@ -55,6 +59,23 @@ class CheckoutService
             $isValorant = ($product->category_id === 1) || ($product->category?->slug === 'valorant');
             $unitPrice = $product->price;
             $selectedOption = null;
+
+            if ($isValorant) {
+                $reservationLimit = max(1, (int) config('services.checkout.max_pending_reserved_accounts_per_user', 50));
+                $activeOrders = Order::where('status', 'pending')->where('expires_at', '>', now());
+                if ($userId) {
+                    $activeOrders->where('user_id', $userId);
+                } elseif ($customerEmail) {
+                    $activeOrders->where('customer_email', $customerEmail);
+                }
+
+                $reservedCount = AccountStock::where('status', 'reserved')
+                    ->whereIn('order_id', $activeOrders->select('id'))
+                    ->count();
+                if ($reservedCount + $quantity > $reservationLimit) {
+                    throw new InvalidArgumentException("Bạn đang giữ {$reservedCount} tài khoản chưa thanh toán. Giới hạn giữ chỗ là {$reservationLimit} tài khoản.");
+                }
+            }
 
             // Xử lý biến thể (Options) cho sản phẩm
             if (!empty($product->options) && is_array($product->options)) {

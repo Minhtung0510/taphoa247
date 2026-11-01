@@ -118,6 +118,14 @@ class CatalogController extends Controller
      */
     protected function formatProductStock(Product $product, ?int $categoryId = null): Product
     {
+        // Never expose supplier mappings or internal margin through the public catalog API.
+        $product->makeHidden([
+            'cloneus_product_id',
+            'digishop_product_id',
+            'shopmmo_product_id',
+            'cost_price',
+        ]);
+
         $catId = $categoryId ?? $product->category_id;
         if ($catId !== 1 && ($product->category?->slug !== 'valorant')) {
             if (!empty($product->options) && is_array($product->options)) {

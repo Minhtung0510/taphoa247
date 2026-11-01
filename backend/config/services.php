@@ -1,6 +1,13 @@
 <?php
 
 return [
+    'payments' => [
+        'late_payment_grace_minutes' => env('LATE_PAYMENT_GRACE_MINUTES', 1440),
+    ],
+    'checkout' => [
+        'max_pending_reserved_accounts_per_user' => env('MAX_PENDING_RESERVED_ACCOUNTS_PER_USER', 50),
+    ],
+
 
     'tls' => [
         // Optional CA bundle path for Windows/local PHP installations.
@@ -62,6 +69,10 @@ return [
     'digishop' => [
         'gateway_key' => env('DIGISHOP_GATEWAY_KEY', env('SUPPLIER_GATEWAY_KEY', '')),
         'reseller_key' => env('DIGISHOP_RESELLER_KEY', env('SUPPLIER_RESELLER_KEY', '')),
+    ],
+
+    'cloneus' => [
+        'api_key' => env('CLONEUS_API_KEY', ''),
     ],
 
     'shopmmo' => [

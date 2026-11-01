@@ -357,7 +357,7 @@ class AdminController extends Controller
             'category_id' => 'required|exists:categories,id',
             'account_type' => 'required|string|max:100|unique:products,account_type',
             'price' => 'required|integer|min:1000|max:100000000',
-            'warranty_hours' => 'nullable|integer|min:0|max:720',
+            'warranty_hours' => 'nullable|integer|min:0|max:8760',
             'is_off_mode' => 'nullable|boolean',
             'is_auto_warranty' => 'nullable|boolean',
             'short_description' => 'nullable|string|max:500',
@@ -401,30 +401,41 @@ class AdminController extends Controller
         $product = Product::findOrFail($id);
 
         $validated = $request->validate([
-            'name' => 'required|string|max:150',
-            'category_id' => 'required|exists:categories,id',
-            'account_type' => "required|string|max:100|unique:products,account_type,{$id}",
-            'price' => 'required|integer|min:1000|max:100000000',
-            'warranty_hours' => 'nullable|integer|min:0|max:720',
-            'is_off_mode' => 'nullable|boolean',
+            'name' => 'sometimes|required|string|max:150',
+            'category_id' => 'sometimes|required|exists:categories,id',
+            'account_type' => [
+                'sometimes',
+                'required',
+                'string',
+                'max:100',
+                "unique:products,account_type,{$id}",
+            ],
+            'price' => 'sometimes|required|integer|min:1000|max:100000000',
+            'warranty_hours' => 'sometimes|integer|min:0|max:8760',
+            'is_off_mode' => 'sometimes|boolean',
             'is_auto_warranty' => 'nullable|boolean',
-            'is_active' => 'nullable|boolean',
+            'is_active' => 'sometimes|required|boolean',
             'short_description' => 'nullable|string|max:500',
             'details_markdown' => 'nullable|string',
         ]);
 
-        $product->update([
-            'category_id' => $validated['category_id'],
-            'name' => trim($validated['name']),
-            'account_type' => trim($validated['account_type']),
-            'price' => (int) $validated['price'],
-            'warranty_hours' => $validated['warranty_hours'] ?? $product->warranty_hours,
-            'is_off_mode' => $validated['is_off_mode'] ?? $product->is_off_mode,
-            'is_auto_warranty' => $validated['is_auto_warranty'] ?? $product->is_auto_warranty,
-            'is_active' => $validated['is_active'] ?? $product->is_active,
-            'short_description' => $validated['short_description'] ?? $product->short_description,
-            'details_markdown' => $validated['details_markdown'] ?? $product->details_markdown,
-        ]);
+        if ($validated === []) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có thông tin sản phẩm nào để cập nhật.',
+            ], 422);
+        }
+
+        foreach (['name', 'account_type'] as $field) {
+            if (array_key_exists($field, $validated)) {
+                $validated[$field] = trim($validated[$field]);
+            }
+        }
+        if (array_key_exists('price', $validated)) {
+            $validated['price'] = (int) $validated['price'];
+        }
+
+        $product->update($validated);
 
         return response()->json([
             'success' => true,
@@ -583,17 +594,19 @@ class AdminController extends Controller
         }
 
         $tx = [
-            'transactionID' => 'MANUAL-ADMIN-' . time(),
+            'transactionID' => 'MANUAL-ADMIN-' . $order->order_code . '-' . Str::upper(Str::random(8)),
             'creditAmount' => $order->total_amount,
             'description' => $order->memo,
             'transactionDate' => now()->toDateTimeString(),
         ];
 
-        $this->orderService->fulfillOrder($order, $tx);
+        if (!$this->orderService->fulfillOrder($order, $tx)) {
+            return response()->json(['success' => false, 'message' => 'Không thể ghi nhận thanh toán cho đơn hàng này.'], 409);
+        }
 
         return response()->json([
             'success' => true,
-            'message' => "Đã duyệt thanh toán thành công cho đơn {$order->order_code}.",
+            'message' => "Đã duyệt thanh toán cho đơn {$order->order_code}; hệ thống đang xử lý giao hàng.",
             'data' => $order->fresh(['items']),
         ]);
     }

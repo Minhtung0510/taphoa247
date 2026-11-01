@@ -57,9 +57,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           Authorization: `Bearer ${savedToken}`,
           Accept: 'application/json',
         },
+        signal: AbortSignal.timeout(10000),
       })
         .then((res) => {
-          if (!res.ok) throw new Error('Token expired');
+          if (res.status === 401) {
+            localStorage.removeItem('dtff_auth_token');
+            localStorage.removeItem('dtff_auth_user');
+            setToken(null);
+            setUser(null);
+            return null;
+          }
+          if (!res.ok) throw new Error(`Session validation temporarily failed (${res.status})`);
           return res.json();
         })
         .then((json) => {
@@ -69,10 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           }
         })
         .catch(() => {
-          // Token không còn hợp lệ -> thu hồi sạch sẽ
-          localStorage.removeItem('dtff_auth_token');
-          localStorage.removeItem('dtff_auth_user');
-          setToken(null);
+          // A network/server failure is temporary; keep the token and retry on the next load.
           setUser(null);
         })
         .finally(() => {

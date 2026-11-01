@@ -26,11 +26,20 @@ class PollPaymentsCommand extends Command
             $this->info("Đã hoàn tất {$waitingFulfilled} đơn hàng chờ nạp kho.");
         }
 
-        // 3. Tìm các đơn pending
-        $pendingOrders = Order::where('status', 'pending')
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            })
+        // 3. Find active orders and recently expired orders that may have a late bank transfer.
+        $latePaymentCutoff = now()->subMinutes(max(0, (int) config('services.payments.late_payment_grace_minutes', 1440)));
+        $pendingOrders = Order::where(function ($query) use ($latePaymentCutoff) {
+            $query->where(function ($pending) {
+                $pending->where('status', 'pending')
+                    ->where(function ($expiry) {
+                        $expiry->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                    });
+            })->orWhere(function ($timeout) use ($latePaymentCutoff) {
+                $timeout->where('status', 'timeout')
+                    ->whereNotNull('expires_at')
+                    ->where('expires_at', '>', $latePaymentCutoff);
+            });
+        })
             ->get();
 
         if ($pendingOrders->isEmpty()) {
@@ -46,14 +55,14 @@ class PollPaymentsCommand extends Command
         foreach ($pendingOrders as $order) {
             $matchedTx = $gateway->findMatchingTransaction($order, $history);
             if ($matchedTx) {
-                $this->info("⚡ Đã khớp thanh toán cho đơn {$order->order_code} (Số tiền: {$order->total_amount}đ)");
+                $this->info("⚡ Đã ghi nhận thanh toán cho đơn {$order->order_code} (Số tiền: {$order->total_amount}đ)");
                 $orderService->fulfillOrder($order, $matchedTx);
                 $fulfilled++;
             }
         }
 
         if ($fulfilled > 0) {
-            $this->info("🎉 Đã tự động hoàn tất {$fulfilled} đơn hàng thành công!");
+            $this->info("🎉 Đã ghi nhận {$fulfilled} giao dịch thanh toán hợp lệ.");
         }
 
         return 0;

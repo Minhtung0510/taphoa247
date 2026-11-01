@@ -37,7 +37,108 @@ class DigishopResellerService
             'apikey'        => $this->gatewayKey,
             'Authorization' => "Bearer {$this->resellerKey}",
             'Content-Type'  => 'application/json',
+            'Accept'        => 'application/json',
         ];
+    }
+
+    /** Read the reseller product catalog. This never creates a purchase. */
+    public function getProducts(int $limit = 50): array
+    {
+        if ($this->gatewayKey === '' || $this->resellerKey === '') {
+            return [];
+        }
+
+        try {
+            $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
+                ->withHeaders($this->headers())
+                ->timeout(20)
+                ->get("{$this->baseUrl}/reseller-get-products", [
+                    'limit' => min(50, max(1, $limit)),
+                ]);
+
+            if (!$response->successful()) {
+                Log::warning('[Reseller API] Product catalog lookup failed.', [
+                    'http_status' => $response->status(),
+                ]);
+                return [];
+            }
+
+            $body = $response->json();
+            $products = $body['products'] ?? $body['data']['products'] ?? $body['data'] ?? [];
+            return is_array($products) ? array_values(array_filter($products, 'is_array')) : [];
+        } catch (\Throwable $e) {
+            Log::warning('[Reseller API] Product catalog lookup raised an exception.', [
+                'error' => $e->getMessage(),
+            ]);
+            return [];
+        }
+    }
+
+    /** Read reseller balance and discount details using the documented GET endpoint. */
+    public function getProfile(): array
+    {
+        if ($this->gatewayKey === '' || $this->resellerKey === '') {
+            return [];
+        }
+
+        try {
+            $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
+                ->withHeaders($this->headers())
+                ->timeout(10)
+                ->get("{$this->baseUrl}/reseller-get-profile");
+
+            if (!$response->successful()) {
+                Log::warning('[Reseller API] Profile lookup failed.', [
+                    'http_status' => $response->status(),
+                ]);
+                return [];
+            }
+
+            $body = $response->json();
+            $profile = $body['profile'] ?? $body['data']['profile'] ?? $body['data'] ?? [];
+            return is_array($profile) ? $profile : [];
+        } catch (\Throwable $e) {
+            Log::warning('[Reseller API] Profile lookup raised an exception.', [
+                'error' => $e->getMessage(),
+            ]);
+            return [];
+        }
+    }
+
+    /** Read the reseller order list using the documented list endpoint. */
+    public function getOrders(int $limit = 50): array
+    {
+        if ($this->gatewayKey === '' || $this->resellerKey === '') {
+            return [];
+        }
+
+        try {
+            $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
+                ->withHeaders($this->headers())
+                ->timeout(15)
+                ->get("{$this->baseUrl}/reseller-get-orders", [
+                    'limit' => min(50, max(1, $limit)),
+                ]);
+
+            if (!$response->successful()) {
+                Log::warning('[Reseller API] Order list lookup failed.', [
+                    'http_status' => $response->status(),
+                ]);
+                return [];
+            }
+
+            $body = $response->json();
+            $orders = $body['orders'] ?? $body['data']['orders'] ?? $body['data'] ?? [];
+            if (is_array($body) && !empty($body['id'])) {
+                return [$body];
+            }
+            return is_array($orders) ? array_values(array_filter($orders, 'is_array')) : [];
+        } catch (\Throwable $e) {
+            Log::warning('[Reseller API] Order list lookup raised an exception.', [
+                'error' => $e->getMessage(),
+            ]);
+            return [];
+        }
     }
 
     /**
@@ -50,47 +151,90 @@ class DigishopResellerService
     public function createOrder(string $productId, string $orderRef): array
     {
         try {
+            // The API requires license_type. Resolve it from the catalog instead of
+            // guessing, and fail closed if this product is missing/unavailable.
+            $product = null;
+            foreach ($this->getProducts(50) as $catalogProduct) {
+                $catalogId = (string) ($catalogProduct['id'] ?? $catalogProduct['product_id'] ?? '');
+                if ($catalogId !== '' && hash_equals($catalogId, $productId)) {
+                    $product = $catalogProduct;
+                    break;
+                }
+            }
+
+            $licenseType = trim((string) ($product['license_type'] ?? ''));
+            if ($product === null || $licenseType === '') {
+                Log::warning('[Reseller API] Purchase stopped: product or license type missing.', [
+                    'product_id' => $productId,
+                ]);
+
+                return [
+                    'success'          => false,
+                    'order_id'         => null,
+                    'delivery_content' => null,
+                    'error'            => 'Sản phẩm không khả dụng hoặc thiếu loại license. Vui lòng liên hệ quản trị viên.',
+                ];
+            }
+
             $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
                 ->withHeaders($this->headers())
-                ->timeout(30)
+                ->timeout(60)
                 ->post("{$this->baseUrl}/reseller-create-order", [
                     'items' => [
                         [
-                            'product_id' => $productId,
-                            'quantity'   => 1,
+                            'product_id'   => $productId,
+                            'quantity'     => 1,
+                            'license_type' => $licenseType,
                         ],
                     ],
-                    'note' => $orderRef,  // Ghi chú để trace lại sau
+                    'customer_note' => $orderRef,
                 ]);
 
             $body = $response->json();
+            $body = is_array($body) ? $body : [];
 
-            Log::info("[Digishop] createOrder product={$productId} ref={$orderRef} status={$response->status()}", [
-                'response' => $body,
-            ]);
-
-            // Digishop có thể trả về array orders hoặc single object
-            $orderData = null;
-            if (!empty($body['id'])) {
-                $orderData = $body;
-            } elseif (!empty($body['orders'][0])) {
+            // Documented response is { "order": { ... } }.
+            $orderData = $body['order'] ?? $body['data']['order'] ?? null;
+            if (!is_array($orderData) && !empty($body['orders'][0]) && is_array($body['orders'][0])) {
                 $orderData = $body['orders'][0];
-            } elseif (!empty($body['order'])) {
-                $orderData = $body['order'];
+            }
+            if (!is_array($orderData) && !empty($body['id'])) {
+                $orderData = $body;
             }
 
-            if ($response->successful() && $orderData) {
+            $externalOrderId = is_array($orderData)
+                ? (string) ($orderData['id'] ?? $orderData['order_number'] ?? '')
+                : '';
+            $deliveryContent = is_array($orderData)
+                ? ($orderData['delivery_content'] ?? null)
+                : null;
+
+            // Never write the raw response to logs: it can contain purchased credentials.
+            Log::info('[Reseller API] Purchase request completed.', [
+                'product_id' => $productId,
+                'order_ref' => $orderRef,
+                'http_status' => $response->status(),
+                'has_order_id' => $externalOrderId !== '',
+                'has_delivery_content' => is_string($deliveryContent) && $deliveryContent !== '',
+                'order_status' => is_array($orderData) ? ($orderData['status'] ?? null) : null,
+            ]);
+
+            if ($response->successful() && is_array($orderData) && $externalOrderId !== '') {
                 return [
                     'success'          => true,
-                    'order_id'         => (string) ($orderData['id'] ?? $orderData['order_number'] ?? ''),
-                    'delivery_content' => $orderData['delivery_content'] ?? null,
+                    'order_id'         => $externalOrderId,
+                    'delivery_content' => $deliveryContent,
                     'status'           => $orderData['status'] ?? 'pending',
                     'error'            => null,
                 ];
             }
 
-            $errorMsg = $body['error'] ?? $body['message'] ?? 'Unknown error from Digishop API';
-            Log::error("[Digishop] createOrder FAILED product={$productId}: {$errorMsg}", ['body' => $body]);
+            $errorMsg = (string) ($body['error'] ?? $body['message'] ?? 'Nhà cung cấp chưa xác nhận được đơn hàng.');
+            Log::warning('[Reseller API] Purchase request was not confirmed.', [
+                'product_id' => $productId,
+                'order_ref' => $orderRef,
+                'http_status' => $response->status(),
+            ]);
 
             return [
                 'success'          => false,
@@ -99,7 +243,11 @@ class DigishopResellerService
                 'error'            => $errorMsg,
             ];
         } catch (\Throwable $e) {
-            Log::error("[Digishop] createOrder EXCEPTION product={$productId}: {$e->getMessage()}");
+            Log::error('[Reseller API] Purchase request raised an exception.', [
+                'product_id' => $productId,
+                'order_ref' => $orderRef,
+                'error' => $e->getMessage(),
+            ]);
 
             return [
                 'success'          => false,
@@ -119,23 +267,9 @@ class DigishopResellerService
     public function getOrder(string $digishopOrderId): array
     {
         try {
-            $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
-                ->withHeaders($this->headers())
-                ->timeout(15)
-                ->get("{$this->baseUrl}/reseller-get-orders", [
-                    'order_id' => $digishopOrderId,
-                ]);
-
-            $body = $response->json();
-            $orders = $body['orders'] ?? $body['data'] ?? ($body['id'] ? [$body] : []);
-
-            // Nếu trả về single object
-            if (!empty($body['id'])) {
-                $orders = [$body];
-            }
-
-            foreach ($orders as $order) {
-                if ((string)($order['id'] ?? '') === $digishopOrderId) {
+            foreach ($this->getOrders(50) as $order) {
+                $orderId = (string) ($order['id'] ?? $order['order_id'] ?? '');
+                if ($orderId !== '' && hash_equals($orderId, $digishopOrderId)) {
                     return [
                         'status'           => $order['status'] ?? 'pending',
                         'delivery_content' => $order['delivery_content'] ?? null,
@@ -143,17 +277,12 @@ class DigishopResellerService
                 }
             }
 
-            // Không tìm thấy trong kết quả
-            if (!empty($orders[0])) {
-                return [
-                    'status'           => $orders[0]['status'] ?? 'pending',
-                    'delivery_content' => $orders[0]['delivery_content'] ?? null,
-                ];
-            }
-
+            // Never use another order's first row as a fallback: that could leak its delivery data.
             return ['status' => 'unknown', 'delivery_content' => null];
         } catch (\Throwable $e) {
-            Log::error("[Digishop] getOrder EXCEPTION id={$digishopOrderId}: {$e->getMessage()}");
+            Log::warning('[Reseller API] Order lookup raised an exception.', [
+                'error' => $e->getMessage(),
+            ]);
             return ['status' => 'error', 'delivery_content' => null];
         }
     }
@@ -163,17 +292,11 @@ class DigishopResellerService
      */
     public function getBalance(): int
     {
-        try {
-            $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
-                ->withHeaders($this->headers())
-                ->timeout(10)
-                ->post("{$this->baseUrl}/reseller-get-profile", []);
-
-            $body = $response->json();
-            return (int) ($body['balance'] ?? $body['wallet_balance'] ?? 0);
-        } catch (\Throwable $e) {
-            Log::warning("[Digishop] getBalance failed: {$e->getMessage()}");
+        $profile = $this->getProfile();
+        if ($profile === []) {
             return -1;
         }
+
+        return (int) ($profile['reseller_balance'] ?? $profile['balance'] ?? $profile['wallet_balance'] ?? -1);
     }
 }

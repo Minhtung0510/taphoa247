@@ -33,6 +33,9 @@ interface OrderItemData {
   position: number;
   product_name: string;
   category_name: string;
+  category_slug?: string;
+  account_type?: string;
+  delivery_format?: string;
   credentials?: string;
   parsed?: ParsedAccountData;
   warranty_duration_hours: number;
@@ -355,7 +358,8 @@ export default function LichSuDonHangPage() {
       ) : (
         <div className="space-y-6">
           {orders.map((order) => {
-            const isPaid = order.status === 'paid' || order.status === 'completed';
+            const isPaid = order.status === 'paid' || order.status === 'completed' || order.status === 'processing';
+            const isProcessing = order.status === 'processing';
             const isCancelled = order.status === 'cancelled';
             const isExpired = order.status === 'expired';
 
@@ -373,7 +377,11 @@ export default function LichSuDonHangPage() {
                         <span className="font-mono font-bold text-white text-sm sm:text-base">
                           {order.order_code}
                         </span>
-                        {isPaid ? (
+                        {isProcessing ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/20 text-cyan-300 border border-cyan-500/40">
+                            Đã nhận tiền · Đang giao
+                          </span>
+                        ) : isPaid ? (
                           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/40">
                             Đã Thanh Toán
                           </span>
@@ -437,6 +445,12 @@ export default function LichSuDonHangPage() {
                     order.items.map((item, idx) => {
                       const copyKey = `${order.order_code}_${item.id}`;
                       const isCopied = copiedId === copyKey;
+                      const isValorant = item.category_slug === 'valorant' || item.account_type === 'valo_acc' || item.category_name?.toLowerCase() === 'valorant';
+                      const isTokenProduct = item.delivery_format === 'token' || item.product_name.toLowerCase().includes('token');
+                      const isCursor = item.product_name.toLowerCase().includes('cursor');
+                      const isCs2 = item.product_name.toLowerCase().includes('cs2') || item.product_name.toLowerCase().includes('cs:go') || item.product_name.toLowerCase().includes('steam');
+                      const isKey = item.delivery_format === 'key_loader' || isCursor || isCs2;
+                      const isLoginCredentials = !isValorant && !isTokenProduct && (item.delivery_format === 'raw_text' || !item.delivery_format) && Boolean(item.parsed?.username && item.parsed?.password);
 
                       // Check if there is an active claim for this order
                       const relatedClaim = order.warranty_claims?.[0];
@@ -467,66 +481,52 @@ export default function LichSuDonHangPage() {
 
                             {/* Credentials box */}
                             {item.credentials ? (
-                              <div className="flex flex-wrap items-center gap-2 pt-1">
-                                {(() => {
-                                  const isCursor = item.product_name.toLowerCase().includes('cursor');
-                                  const isKey = isCursor || item.credentials.includes('Key') || item.credentials.includes('JG-CF');
-
-                                  return (
-                                    <>
-                                      <div className="px-3 py-1.5 bg-slate-900 border border-slate-700 rounded-lg font-mono text-xs text-amber-300 select-all max-w-md truncate">
-                                        {item.credentials}
+                              <div className="w-full space-y-2 pt-1">
+                                {!isValorant && !isKey ? (
+                                  <div className="rounded-lg border border-cyan-500/20 bg-slate-900/80 p-3 space-y-2">
+                                    <div className="text-[11px] font-semibold text-cyan-200">
+                                      {isTokenProduct ? 'Mã / token được giao' : 'Thông tin giao hàng'}
+                                    </div>
+                                    {isLoginCredentials ? (
+                                      <div className="grid gap-2 sm:grid-cols-2">
+                                        <div className="rounded-md bg-black/30 p-2"><div className="text-[10px] text-slate-500">Tài khoản</div><div className="break-all font-mono text-xs text-slate-100 select-all">{item.parsed?.username}</div></div>
+                                        <div className="rounded-md bg-black/30 p-2"><div className="text-[10px] text-slate-500">Mật khẩu</div><div className="break-all font-mono text-xs text-slate-100 select-all">{item.parsed?.password}</div></div>
                                       </div>
-                                      <button
-                                        type="button"
-                                        onClick={() => copyToClipboard(item.credentials || '', copyKey)}
-                                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
-                                          isCopied
-                                            ? 'bg-emerald-500 text-slate-950'
-                                            : 'bg-slate-800 hover:bg-slate-700 text-slate-200'
-                                        }`}
-                                      >
-                                        {isCopied ? '✓ Đã Chép' : isKey ? 'Sao chép Key' : 'Sao chép TK:MK'}
-                                      </button>
-                                      {isCursor && (
-                                        <button
-                                          type="button"
-                                          onClick={() => setCursorGuideKey(item.credentials || null)}
-                                          className="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer"
-                                        >
-                                          <span>📖</span>
-                                          <span>Hướng dẫn</span>
-                                        </button>
-                                      )}
-                                      {!isKey && (
-                                        <button
-                                          type="button"
-                                          onClick={() => {
-                                            const canW =
-                                              item.is_warranty_valid &&
-                                              item.replacement_count < 3 &&
-                                              (!claimInfo ||
-                                                (claimInfo.state !== 'waiting_admin' && claimInfo.status !== 'waiting_admin'));
-                                            setCheckAccItem({
-                                              orderCode: order.order_code,
-                                              position: item.position || idx + 1,
-                                              productName: item.product_name,
-                                              credentials: item.credentials,
-                                              parsed: item.parsed,
-                                              canWarranty: canW,
-                                              replacementCount: item.replacement_count,
-                                              itemId: item.id,
-                                            });
-                                          }}
-                                          className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg text-xs font-bold transition-all shadow-md shadow-indigo-600/20 flex items-center gap-1.5 active:scale-95 cursor-pointer"
-                                        >
-                                          <span>🔍</span>
-                                          <span>Check Acc</span>
-                                        </button>
-                                      )}
-                                    </>
-                                  );
-                                })()}
+                                    ) : (
+                                      <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-all rounded-md bg-black/30 p-2 font-mono text-xs text-slate-100 select-all">{item.credentials}</pre>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <div className={`max-w-full overflow-hidden text-ellipsis whitespace-nowrap rounded-lg border px-3 py-1.5 font-mono text-xs select-all ${isValorant ? 'border-slate-700 bg-slate-900 text-amber-300' : 'border-amber-500/20 bg-slate-900 text-amber-200'}`}>
+                                    {item.credentials}
+                                  </div>
+                                )}
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <button
+                                    type="button"
+                                    onClick={() => copyToClipboard(item.credentials || '', copyKey)}
+                                    className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${isCopied ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 hover:bg-slate-700 text-slate-200'}`}
+                                  >
+                                    {isCopied ? '✓ Đã Chép' : isKey ? 'Sao chép Key' : isValorant ? 'Sao chép TK:MK' : isTokenProduct ? 'Sao chép token' : 'Sao chép toàn bộ'}
+                                  </button>
+                                  {isCursor && (
+                                    <button type="button" onClick={() => setCursorGuideKey(item.credentials || null)} className="px-2.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer">
+                                      <span>📖</span><span>Hướng dẫn</span>
+                                    </button>
+                                  )}
+                                  {isValorant && !isKey && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const canW = item.is_warranty_valid && item.replacement_count < 3 && (!claimInfo || (claimInfo.state !== 'waiting_admin' && claimInfo.status !== 'waiting_admin'));
+                                        setCheckAccItem({ orderCode: order.order_code, position: item.position || idx + 1, productName: item.product_name, credentials: item.credentials, parsed: item.parsed, canWarranty: canW, replacementCount: item.replacement_count, itemId: item.id });
+                                      }}
+                                      className="px-3 py-1.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-lg text-xs font-bold transition-all shadow-md shadow-indigo-600/20 flex items-center gap-1.5 active:scale-95 cursor-pointer"
+                                    >
+                                      <span>🔍</span><span>Check Acc</span>
+                                    </button>
+                                  )}
+                                </div>
                               </div>
                             ) : (
                               <div className="text-xs text-slate-500 italic">
