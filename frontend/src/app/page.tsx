@@ -3,9 +3,11 @@ import { fetchCategories, fetchProducts, fetchStoreStats } from '@/lib/api';
 import { HeroFeatureCard } from '@/components/home/HeroFeatureCard';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { ProductCatalog } from '@/components/product/ProductCatalog';
+import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const metadata: Metadata = {
+  alternates: { canonical: 'https://taphoa247.io.vn' },
+};
 
 export default async function HomePage() {
   const [categories, products, stats] = await Promise.all([
@@ -327,6 +329,8 @@ export default async function HomePage() {
                           <img
                             src={theme.logo}
                             alt={cat.name}
+                            loading="lazy"
+                            decoding="async"
                             className="w-full h-full object-contain rounded-lg"
                           />
                         ) : (

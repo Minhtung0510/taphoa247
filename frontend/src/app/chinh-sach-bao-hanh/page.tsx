@@ -3,9 +3,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Chính Sách Bảo Hành & Đổi Trả Chính Hãng | Tạp Hóa 247',
+  title: 'Chính Sách Bảo Hành & Đổi Trả',
   description:
     'Chi tiết chính sách bảo hành chính thức cho Cursor AI Pro, Gemini Antigravity, Google One 5TB, SubAPI Credits, Muse AI, Tool AI và Tài Khoản Game tại Tạp Hóa 247.',
+  alternates: { canonical: 'https://taphoa247.io.vn/chinh-sach-bao-hanh' },
+  openGraph: {
+    title: 'Chính Sách Bảo Hành & Đổi Trả | Tạp Hóa 247',
+    description:
+      'Chi tiết chính sách bảo hành và đổi trả các sản phẩm tại Tạp Hóa 247.',
+    url: 'https://taphoa247.io.vn/chinh-sach-bao-hanh',
+    type: 'website',
+  },
 };
 
 export default function WarrantyPolicyPage() {
@@ -73,7 +81,7 @@ export default function WarrantyPolicyPage() {
             <div className="glass-card rounded-2xl p-5 border-[#232834] space-y-3 bg-[#131722]/80">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#0a0f1d] border border-white/10 p-1 flex items-center justify-center shrink-0">
-                  <img src="/images/products/cursor-logo.jpg" alt="Cursor AI" className="w-full h-full object-contain rounded" />
+                  <img src="/images/products/cursor-logo.jpg" alt="Cursor AI" loading="lazy" decoding="async" className="w-full h-full object-contain rounded" />
                 </div>
                 <div>
                   <h3 className="font-bold text-white text-sm">1. Cursor AI Pro (Gói Ngày & VIP Request Pool)</h3>
@@ -100,7 +108,7 @@ export default function WarrantyPolicyPage() {
             <div className="glass-card rounded-2xl p-5 border-[#232834] space-y-3 bg-[#131722]/80">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#0a0f1d] border border-white/10 p-1 flex items-center justify-center shrink-0">
-                  <img src="/images/products/antigravity-logo.jpg" alt="Gemini Antigravity" className="w-full h-full object-contain rounded" />
+                  <img src="/images/products/antigravity-logo.jpg" alt="Gemini Antigravity" loading="lazy" decoding="async" className="w-full h-full object-contain rounded" />
                 </div>
                 <div>
                   <h3 className="font-bold text-white text-sm">2. Gemini Antigravity (Slot & Tài Khoản Sẵn)</h3>
@@ -127,7 +135,7 @@ export default function WarrantyPolicyPage() {
             <div className="glass-card rounded-2xl p-5 border-[#232834] space-y-3 bg-[#131722]/80">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#0a0f1d] border border-white/10 p-1 flex items-center justify-center shrink-0">
-                  <img src="/images/products/google-one-logo.png" alt="Google One" className="w-full h-full object-contain rounded" />
+                  <img src="/images/products/google-one-logo.png" alt="Google One" loading="lazy" decoding="async" className="w-full h-full object-contain rounded" />
                 </div>
                 <div>
                   <h3 className="font-bold text-white text-sm">3. Google One 5TB (Slot Chính Chủ)</h3>
@@ -150,7 +158,7 @@ export default function WarrantyPolicyPage() {
             <div className="glass-card rounded-2xl p-5 border-[#232834] space-y-3 bg-[#131722]/80">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#0a0f1d] border border-white/10 p-1 flex items-center justify-center shrink-0">
-                  <img src="/images/products/apisub-logo.jpg" alt="API Sub Credits" className="w-full h-full object-contain rounded" />
+                  <img src="/images/products/apisub-logo.jpg" alt="API Sub Credits" loading="lazy" decoding="async" className="w-full h-full object-contain rounded" />
                 </div>
                 <div>
                   <h3 className="font-bold text-white text-sm">4. API Sub Credits</h3>
@@ -173,7 +181,7 @@ export default function WarrantyPolicyPage() {
             <div className="glass-card rounded-2xl p-5 border-[#232834] space-y-3 bg-[#131722]/80">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#0a0f1d] border border-white/10 p-1 flex items-center justify-center shrink-0">
-                  <img src="/images/products/muse-logo.jpg" alt="Muse AI" className="w-full h-full object-contain rounded" />
+                  <img src="/images/products/muse-logo.jpg" alt="Muse AI" loading="lazy" decoding="async" className="w-full h-full object-contain rounded" />
                 </div>
                 <div>
                   <h3 className="font-bold text-white text-sm">5. Muse AI 1B Token (Tài Khoản Email)</h3>
@@ -196,7 +204,7 @@ export default function WarrantyPolicyPage() {
             <div className="glass-card rounded-2xl p-5 border-[#232834] space-y-3 bg-[#131722]/80">
               <div className="flex items-center gap-2.5">
                 <div className="w-8 h-8 rounded-lg bg-[#0a0f1d] border border-white/10 p-1 flex items-center justify-center shrink-0">
-                  <img src="/images/products/video-ai-tools-logo.jpg" alt="Video & AI Tools" className="w-full h-full object-contain rounded" />
+                  <img src="/images/products/video-ai-tools-logo.jpg" alt="Video & AI Tools" loading="lazy" decoding="async" className="w-full h-full object-contain rounded" />
                 </div>
                 <div>
                   <h3 className="font-bold text-white text-sm">6. DigiVideoViral, Engineer Kit & Marketing Kit</h3>

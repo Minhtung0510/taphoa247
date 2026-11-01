@@ -3,15 +3,14 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Trung Tâm Hướng Dẫn - Cẩm Nang Sử Dụng Tài Khoản CS2, Discord, Cursor AI | Tạp Hóa 247',
+  title: 'Trung Tâm Hướng Dẫn - Cẩm Nang Sử Dụng Tài Khoản CS2, Discord, Cursor AI',
   description:
     'Tổng hợp hướng dẫn kích hoạt CS2 Prime bằng SteamLoader, sử dụng Discord Token/Clone, Cursor AI Pro và các tài khoản số mua tại Tạp Hóa 247.',
-  keywords: ['hướng dẫn cs2 prime', 'hướng dẫn discord token', 'cursor ai pro cách dùng', 'taphoa247 hướng dẫn'],
   alternates: {
     canonical: 'https://taphoa247.io.vn/huong-dan',
   },
   openGraph: {
-    title: 'Hướng Dẫn Sử Dụng Tài Khoản CS2, Discord, Cursor AI | Tạp Hóa 247',
+    title: 'Hướng Dẫn Sử Dụng Tài Khoản CS2, Discord, Cursor AI',
     description: 'Tổng hợp hướng dẫn kích hoạt tài khoản CS2 Prime, Discord, Cursor AI mua tại Tạp Hóa 247.',
     url: 'https://taphoa247.io.vn/huong-dan',
     type: 'website',

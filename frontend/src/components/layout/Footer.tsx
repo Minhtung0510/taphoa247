@@ -38,7 +38,7 @@ export function Footer() {
   const storeName = storeSettings?.store_name || 'Tạp Hóa 247';
   const storeSlogan =
     storeSettings?.store_slogan ||
-    'Hệ thống bán tài khoản AI, bản quyền lập trình, Discord & CS:GO 2 Prime tự động 24/7 uy tín số 1 Việt Nam. Thanh toán VietQR TPBank nhận hàng sau 3 giây, bảo hành 1 đổi 1.';
+    'Hệ thống bán tài khoản AI, bản quyền lập trình, Discord & CS:GO 2 Prime tự động 24/7. Thanh toán VietQR TPBank nhận hàng sau 3 giây, bảo hành 1 đổi 1.';
   const hotline = storeSettings?.store_hotline || '0937809305';
   const telegram = storeSettings?.store_telegram || 'https://t.me/taphoa247';
   const facebook = storeSettings?.store_facebook || 'https://www.facebook.com/bill300213/';

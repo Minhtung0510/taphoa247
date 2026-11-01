@@ -2,8 +2,15 @@ import React from 'react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Liên Hệ Hỗ Trợ Khách Hàng 24/7 | Tạp Hóa 247',
+  title: 'Liên Hệ Hỗ Trợ Khách Hàng 24/7',
   description: 'Kênh liên hệ hỗ trợ kỹ thuật, xử lý bảo hành và khiếu nại tài khoản game tại Tạp Hóa 247.',
+  alternates: { canonical: 'https://taphoa247.io.vn/lien-he' },
+  openGraph: {
+    title: 'Liên Hệ Hỗ Trợ Khách Hàng 24/7 | Tạp Hóa 247',
+    description: 'Kênh liên hệ hỗ trợ kỹ thuật, xử lý bảo hành và khiếu nại tài khoản game tại Tạp Hóa 247.',
+    url: 'https://taphoa247.io.vn/lien-he',
+    type: 'website',
+  },
 };
 
 export default function ContactPage() {

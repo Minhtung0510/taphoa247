@@ -24,25 +24,8 @@ export const metadata: Metadata = {
     template: '%s | Tạp Hóa 247',
   },
   description:
-    'Shop bán tài khoản Discord & Token, CS2 Prime (NFA, No VAC), Cursor AI Pro, Gemini Antigravity tự động 24/7 qua VietQR TPBank. Nhận acc sau 3 giây, bảo hành 1 đổi 1 tức thì, uy tín số 1 Việt Nam.',
-  keywords: [
-    'tạp hóa 247',
-    'taphoa247',
-    'taphoa247.io.vn',
-    'mua tài khoản discord',
-    'discord token giá rẻ',
-    'acc cs2 prime',
-    'mua acc cs2 không vac',
-    'cursor ai pro bản quyền',
-    'gemini antigravity slot',
-    'mua acc game tự động 247',
-    'shop bán tài khoản số tự động',
-    'google one 5tb gia re',
-  ],
+    'Shop bán tài khoản Discord & Token, CS2 Prime (NFA, No VAC), Cursor AI Pro, Gemini Antigravity tự động 24/7 qua VietQR TPBank. Nhận acc sau 3 giây, bảo hành 1 đổi 1 tức thì.',
   authors: [{ name: 'Tạp Hóa 247 Team' }],
-  alternates: {
-    canonical: 'https://taphoa247.io.vn',
-  },
   verification: {
     google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || '',
   },
@@ -99,7 +82,7 @@ import { API_BASE_URL } from '@/lib/api';
 async function getInitialSettings() {
   try {
     const res = await fetch(`${API_BASE_URL}/store/settings`, {
-      cache: 'no-store',
+      next: { revalidate: 60 },
     });
     if (res.ok) {
       const data = await res.json();

@@ -324,6 +324,8 @@ export function ProductCard({ product, categorySlug, isCheckoutPreview }: Produc
             <img
               src={product.image_url}
               alt={product.name}
+              loading="lazy"
+              decoding="async"
               onError={() => setImageError(true)}
               className="w-full h-full object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] transition-transform duration-300 group-hover:scale-105 rounded-xl"
             />
@@ -331,6 +333,8 @@ export function ProductCard({ product, categorySlug, isCheckoutPreview }: Produc
             <img
               src={isDiscord ? '/logos/discord-logo.png' : isCs2 ? '/logos/csgo2-logo.png' : '/logos/discord-logo.png'}
               alt={product.name}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-contain filter drop-shadow-[0_4px_8px_rgba(0,0,0,0.5)] transition-transform duration-300 group-hover:scale-105 rounded-xl"
             />
           )}

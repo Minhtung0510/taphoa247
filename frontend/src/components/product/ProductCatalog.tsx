@@ -217,6 +217,8 @@ export function ProductCatalog({ products: initialProducts, categories: initialC
                     <img
                       src={logoSrc}
                       alt={cat.name}
+                      loading="lazy"
+                      decoding="async"
                       className="w-full h-full object-contain rounded-[3px]"
                     />
                   </div>

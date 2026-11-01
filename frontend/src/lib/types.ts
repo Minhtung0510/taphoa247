@@ -7,6 +7,7 @@ export interface Category {
   sort_order: number;
   is_active: boolean;
   products_count?: number;
+  updated_at?: string;
 }
 
 export interface ProductOption {
@@ -37,6 +38,7 @@ export interface Product {
   is_active: boolean;
   available_stock?: number;
   category?: Category;
+  updated_at?: string;
 }
 
 export interface OrderItem {

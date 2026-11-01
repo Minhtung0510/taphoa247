@@ -4,17 +4,9 @@ import Link from 'next/link';
 import { SteamLoaderGuideCard } from '@/components/guide/SteamLoaderGuideCard';
 
 export const metadata: Metadata = {
-  title: 'Hướng Dẫn Sử Dụng Tool SteamLoader & Đăng Nhập CS:GO 2 (CS2) Prime | Tạp Hóa 247',
+  title: 'Hướng Dẫn Sử Dụng Tool SteamLoader & Đăng Nhập CS:GO 2 (CS2) Prime',
   description:
     'Hướng dẫn chi tiết cách tải SteamLoader.exe, nhập Key bản quyền đăng nhập tự động CS2 Prime NFA không cần mật khẩu hay Steam Guard, an toàn 100%.',
-  keywords: [
-    'hướng dẫn cs2 prime',
-    'Steamloader',
-    'đăng nhập cs2 bằng tool',
-    'cs2 nfa cách dùng',
-    'steamloader exe hướng dẫn',
-    'kích hoạt acc cs2 prime',
-  ],
   alternates: {
     canonical: 'https://taphoa247.io.vn/huong-dan/cs2',
   },

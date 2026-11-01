@@ -2,8 +2,15 @@ import React from 'react';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Điều Khoản Dịch Vụ | Tạp Hóa 247',
+  title: 'Điều Khoản Dịch Vụ',
   description: 'Điều khoản và quy định sử dụng dịch vụ tài khoản số & game tại Tạp Hóa 247.',
+  alternates: { canonical: 'https://taphoa247.io.vn/dieu-khoan' },
+  openGraph: {
+    title: 'Điều Khoản Dịch Vụ | Tạp Hóa 247',
+    description: 'Điều khoản và quy định sử dụng dịch vụ tài khoản số & game tại Tạp Hóa 247.',
+    url: 'https://taphoa247.io.vn/dieu-khoan',
+    type: 'website',
+  },
 };
 
 export default function TermsPage() {
