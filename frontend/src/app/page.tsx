@@ -325,9 +325,9 @@ export default async function HomePage() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <div className="w-12 h-12 rounded-xl overflow-hidden border border-white/10 bg-[#0a0f1d] p-1.5 flex items-center justify-center shadow-lg shrink-0">
-                        {theme.logo ? (
+                        {(theme.logo || /^https?:\/\//i.test(cat.icon || "")) ? (
                           <img
-                            src={theme.logo}
+                            src={/^https?:\/\//i.test(cat.icon || "") ? cat.icon : theme.logo}
                             alt={cat.name}
                             loading="lazy"
                             decoding="async"

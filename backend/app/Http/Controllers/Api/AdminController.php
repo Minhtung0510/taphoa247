@@ -236,7 +236,7 @@ class AdminController extends Controller
             'name' => 'required|string|max:100',
             'slug' => 'nullable|string|max:100|unique:categories,slug',
             'description' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:255',
+            'icon' => 'nullable|string|max:2048',
             'sort_order' => 'nullable|integer',
             'is_active' => 'nullable|boolean',
         ]);
@@ -275,7 +275,7 @@ class AdminController extends Controller
             'name' => 'required|string|max:100',
             'slug' => 'nullable|string|max:100|unique:categories,slug,' . $id,
             'description' => 'nullable|string|max:255',
-            'icon' => 'nullable|string|max:255',
+            'icon' => 'nullable|string|max:2048',
             'sort_order' => 'nullable|integer',
             'is_active' => 'nullable|boolean',
         ]);
@@ -362,6 +362,7 @@ class AdminController extends Controller
             'is_auto_warranty' => 'nullable|boolean',
             'short_description' => 'nullable|string|max:500',
             'details_markdown' => 'nullable|string',
+            'image_url' => ['nullable', 'string', 'max:2048', 'regex:~^(https?://|/(?!/))~i'],
         ]);
 
         $baseSlug = Str::slug($validated['name']);
@@ -382,6 +383,7 @@ class AdminController extends Controller
             'is_auto_warranty' => $validated['is_auto_warranty'] ?? true,
             'short_description' => $validated['short_description'] ?? null,
             'details_markdown' => $validated['details_markdown'] ?? null,
+            'image_url' => $validated['image_url'] ?? null,
             'is_active' => true,
             'sort_order' => (int) (Product::max('sort_order') ?? 0) + 1,
         ]);
@@ -417,6 +419,7 @@ class AdminController extends Controller
             'is_active' => 'sometimes|required|boolean',
             'short_description' => 'nullable|string|max:500',
             'details_markdown' => 'nullable|string',
+            'image_url' => ['nullable', 'string', 'max:2048', 'regex:~^(https?://|/(?!/))~i'],
         ]);
 
         if ($validated === []) {
@@ -436,6 +439,10 @@ class AdminController extends Controller
         }
 
         $product->update($validated);
+        if (($validated['is_active'] ?? false) === true) {
+            $product->category()->update(['is_active' => true]);
+        }
+        \Illuminate\Support\Facades\Cache::forget('catalog.categories');
 
         return response()->json([
             'success' => true,

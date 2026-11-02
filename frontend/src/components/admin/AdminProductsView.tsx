@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import { CategoryManager, categoryIcon } from './CategoryManager';
 
 interface Category {
   id: number;
@@ -17,6 +18,7 @@ interface Product {
   name: string;
   slug?: string;
   price: number;
+  cost_price?: number | null;
   category_id?: number;
   category?: Category;
   account_type?: string;
@@ -41,7 +43,7 @@ interface AdminProductsViewProps {
   handleDeleteCategory: (id: number, name: string) => void;
   handleDeleteProduct: (id: number, name: string) => void;
   handleQuickPriceUpdate: (id: number, newPrice: number) => void;
-  handleToggleActive: (id: number, currentState: boolean) => void;
+  handleToggleActive: (id: number, currentState: boolean) => void | Promise<void>;
   onRefresh: () => void;
 }
 
@@ -65,6 +67,17 @@ export function AdminProductsView({
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string>('all');
   const [editingPriceId, setEditingPriceId] = useState<number | null>(null);
   const [tempPrice, setTempPrice] = useState<string>('');
+  const [togglingIds, setTogglingIds] = useState<number[]>([]);
+
+  const toggleProduct = async (id: number, currentState: boolean) => {
+    if (togglingIds.includes(id)) return;
+    setTogglingIds((ids) => [...ids, id]);
+    try {
+      await handleToggleActive(id, currentState);
+    } finally {
+      setTogglingIds((ids) => ids.filter((value) => value !== id));
+    }
+  };
 
   // KPIs
   const totalProducts = products.length;
@@ -204,7 +217,7 @@ export function AdminProductsView({
                     : 'bg-[#050a14] text-slate-400 hover:text-white border border-[#1e293b]'
                 }`}
               >
-                <span>{c.icon || '📁'}</span>
+                <span>{categoryIcon(c.icon)}</span>
                 <span>{c.name}</span>
                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono ${
                   isSelected ? 'bg-black/20 text-[#050a14]' : 'bg-white/5 text-slate-400'
@@ -254,97 +267,10 @@ export function AdminProductsView({
           3. CATEGORY MANAGER DRAWER (IF OPEN)
          ══════════════════════════════════════════════════════════ */}
       {isCategoryManagerOpen && (
-        <div className="bg-[#080d19] border border-amber-500/40 rounded-3xl p-5 sm:p-6 space-y-4 animate-in fade-in slide-in-from-top-2 shadow-2xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1e293b]">
-            <div>
-              <div className="flex items-center gap-2">
-                <span className="text-amber-400 text-lg">📂</span>
-                <h3 className="text-sm font-black text-white uppercase tracking-wider font-mono">
-                  Bảng Quản Lý Danh Mục Hệ Thống
-                </h3>
-                <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 text-[10px] font-bold font-mono">
-                  {categories.length} danh mục
-                </span>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Thêm danh mục mới, thay đổi icon, đường dẫn slug và thứ tự sắp xếp
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => openCreateCategoryModal()}
-              className="px-4 py-2 bg-gradient-to-r from-amber-400 to-amber-500 text-[#050a14] font-black rounded-xl text-xs transition-all shadow-md active:scale-95 cursor-pointer self-start sm:self-auto"
-            >
-              + Tạo Danh Mục Mới
-            </button>
-          </div>
-
-          <div className="overflow-x-auto rounded-2xl border border-[#1e293b]">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-[#0c1324] text-slate-400 border-b border-[#1e293b] font-mono uppercase text-[10px]">
-                <tr>
-                  <th className="py-3 px-3">Danh Mục</th>
-                  <th className="py-3 px-3">Slug</th>
-                  <th className="py-3 px-3 text-center">Số SP</th>
-                  <th className="py-3 px-3 text-center">Thứ tự</th>
-                  <th className="py-3 px-3 text-center">Trạng thái</th>
-                  <th className="py-3 px-3 text-right">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1e293b] font-mono">
-                {categories.map((c) => {
-                  const prodCount = products.filter((p) => p.category_id === c.id || p.category?.slug === c.slug).length;
-                  return (
-                    <tr key={c.id} className="hover:bg-white/[0.02] transition-colors">
-                      <td className="py-3 px-3">
-                        <div className="flex items-center gap-2 font-bold text-white font-sans">
-                          <span className="text-base">{c.icon || '📦'}</span>
-                          <span>{c.name}</span>
-                        </div>
-                      </td>
-                      <td className="py-3 px-3">
-                        <span className="px-2 py-0.5 rounded bg-[#050a14] border border-[#1e293b] text-[#00c4ff] text-[10px]">
-                          /{c.slug}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-center font-bold text-[#00e5a0]">
-                        {prodCount}
-                      </td>
-                      <td className="py-3 px-3 text-center text-slate-400">
-                        {c.sort_order ?? 0}
-                      </td>
-                      <td className="py-3 px-3 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                          c.is_active !== false ? 'bg-[#00e5a0]/15 text-[#00e5a0]' : 'bg-slate-800 text-slate-500'
-                        }`}>
-                          {c.is_active !== false ? 'Hoạt động' : 'Tạm ẩn'}
-                        </span>
-                      </td>
-                      <td className="py-3 px-3 text-right">
-                        <div className="flex items-center justify-end gap-1.5">
-                          <button
-                            type="button"
-                            onClick={() => openEditCategoryModal(c)}
-                            className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
-                          >
-                            ✏️ Sửa
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => handleDeleteCategory(c.id, c.name)}
-                            className="px-2.5 py-1 bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 rounded-lg text-[11px] font-bold transition-all cursor-pointer"
-                          >
-                            🗑️ Xóa
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
+        <CategoryManager categories={categories} products={products}
+          onCreate={openCreateCategoryModal} onEdit={openEditCategoryModal}
+          onDelete={handleDeleteCategory} onClose={() => setIsCategoryManagerOpen(false)}
+          onProducts={(id) => { setSelectedCategoryFilter(String(id)); setProductSearch(''); setIsCategoryManagerOpen(false); }} />
       )}
 
       {/* ══════════════════════════════════════════════════════════
@@ -434,6 +360,9 @@ export function AdminProductsView({
                             <span className="text-[10px] text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">✏️</span>
                           </div>
                         )}
+                        <div className="mt-1 text-[11px] text-slate-400">
+                          Giá nhập: {p.cost_price == null ? 'Chưa có' : `${p.cost_price.toLocaleString('vi-VN')} đ`}
+                        </div>
                       </td>
 
                       {/* Stock Counter with color pill */}
@@ -467,14 +396,18 @@ export function AdminProductsView({
                       <td className="py-4 px-4 text-center">
                         <button
                           type="button"
-                          onClick={() => handleToggleActive(p.id, isActive)}
+                          onClick={() => toggleProduct(p.id, isActive)}
+                          disabled={togglingIds.includes(p.id)}
+                          role="switch"
+                          aria-checked={isActive}
+                          aria-label={`${isActive ? 'Tắt bán' : 'Bật bán'} ${p.name}`}
                           className={`px-3 py-1 rounded-full text-[10px] font-bold font-mono transition-all cursor-pointer ${
                             isActive
                               ? 'bg-[#00e5a0]/15 text-[#00e5a0] hover:bg-[#00e5a0]/25 border border-[#00e5a0]/30'
                               : 'bg-slate-800 text-slate-400 hover:bg-slate-700 border border-slate-700'
                           }`}
                         >
-                          {isActive ? '✓ Đang Bán' : 'Tạm Ẩn'}
+                          {togglingIds.includes(p.id) ? 'Đang lưu…' : isActive ? '● Bật · Bấm để tắt' : '○ Tắt · Bấm để bật'}
                         </button>
                       </td>
 

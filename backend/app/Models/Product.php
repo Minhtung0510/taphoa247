@@ -20,6 +20,7 @@ class Product extends Model
         'delivery_format',
         'price',
         'cost_price',
+        'requires_customer_note',
         'warranty_hours',
         'is_auto_warranty',
         'is_off_mode',
@@ -35,6 +36,7 @@ class Product extends Model
     protected $casts = [
         'price'               => 'integer',
         'cost_price'          => 'integer',
+        'requires_customer_note' => 'boolean',
         'warranty_hours'      => 'integer',
         'shopmmo_product_id'  => 'integer',
         'is_auto_warranty'    => 'boolean',

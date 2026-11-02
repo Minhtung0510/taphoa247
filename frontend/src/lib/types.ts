@@ -26,6 +26,7 @@ export interface Product {
   name: string;
   slug: string;
   account_type: string;
+  requires_customer_note?: boolean | null;
   price: number;
   warranty_hours: number;
   is_auto_warranty: boolean;

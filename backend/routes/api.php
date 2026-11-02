@@ -66,6 +66,8 @@ Route::prefix('v1')->group(function () {
             Route::get('/users/export', [AdminController::class, 'exportUsers']);
             Route::get('/users', [AdminController::class, 'users']);
             Route::get('/bootstrap', [AdminController::class, 'bootstrap']);
+            Route::get('/supplier-balances', \App\Http\Controllers\Api\SupplierBalanceController::class);
+            Route::post('/images', \App\Http\Controllers\Api\AdminImageController::class);
             Route::get('/dashboard', [AdminController::class, 'dashboard']);
             Route::get('/categories', [AdminController::class, 'categories']);
             Route::post('/categories', [AdminController::class, 'createCategory']);

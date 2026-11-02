@@ -10,6 +10,9 @@ import { AdminSidebar } from '@/components/admin/AdminSidebar';
 import { AdminDashboardView } from '@/components/admin/AdminDashboardView';
 import { AdminOrdersView } from '@/components/admin/AdminOrdersView';
 import { AdminProductsView } from '@/components/admin/AdminProductsView';
+import { categoryIcon, CategoryArtwork } from '@/components/admin/CategoryManager';
+import { ImageImport } from '@/components/admin/ImageImport';
+import { SupplierBalances } from '@/components/admin/SupplierBalances';
 import { AdminStockView } from '@/components/admin/AdminStockView';
 import { AdminWarrantyView } from '@/components/admin/AdminWarrantyView';
 import { AdminCouponsView } from '@/components/admin/AdminCouponsView';
@@ -22,6 +25,7 @@ export default function AdminPage() {
   const [mounted, setMounted] = useState(false);
   const [verifying, setVerifying] = useState(true);
   const [isDirectAdmin, setIsDirectAdmin] = useState(false);
+  const [accessError, setAccessError] = useState<string | null>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Xác thực quyền Admin tuyệt đối qua Server (không tin cậy LocalStorage)
@@ -67,6 +71,9 @@ export default function AdminPage() {
             setIsDirectAdmin(false);
           }
         } else {
+          if (res.status !== 401 && res.status !== 403) {
+            setAccessError('Không tải được dữ liệu quản trị. Vui lòng thử lại.');
+          }
           // A valid customer session must survive denied admin access.
           if (res.status === 401) {
             localStorage.removeItem('dtff_auth_token');
@@ -76,6 +83,7 @@ export default function AdminPage() {
           setIsDirectAdmin(false);
         }
       } catch {
+        setAccessError('Không kết nối được máy chủ quản trị. Vui lòng thử lại.');
         setIsDirectAdmin(false);
       } finally {
         if (!isCancelled) {
@@ -148,6 +156,7 @@ export default function AdminPage() {
     is_off_mode: false,
     is_active: true,
     short_description: '',
+      image_url: '',
   });
   const [submittingProduct, setSubmittingProduct] = useState(false);
   const [productModalError, setProductModalError] = useState<string | null>(null);
@@ -457,6 +466,7 @@ export default function AdminPage() {
       is_off_mode: isOff,
       is_active: true,
       short_description: '',
+      image_url: '',
     });
     setProductModalError(null);
     setIsProductModalOpen(true);
@@ -475,6 +485,7 @@ export default function AdminPage() {
       is_off_mode: Boolean(p.is_off_mode),
       is_active: p.is_active !== false,
       short_description: p.short_description || '',
+      image_url: p.image_url || '',
     });
     setProductModalError(null);
     setIsProductModalOpen(true);
@@ -501,6 +512,7 @@ export default function AdminPage() {
         is_off_mode: Boolean(productForm.is_off_mode),
         is_active: Boolean(productForm.is_active),
         short_description: String(productForm.short_description || '').trim(),
+        image_url: productForm.image_url || null,
       };
 
       const res = await fetch(url, {
@@ -568,7 +580,7 @@ export default function AdminPage() {
       });
       const json = await res.json();
       if (json.success) {
-        loadData();
+        await loadData();
       } else {
         alert(json.message || 'Lỗi cập nhật trạng thái.');
       }
@@ -1063,6 +1075,16 @@ export default function AdminPage() {
 
   // Keep the admin route hidden for non-admin sessions; API authorization remains authoritative.
   if (!isDirectAdmin) {
+    if (accessError) {
+      return (
+        <div className="min-h-[75vh] flex items-center justify-center px-4">
+          <div className="text-center space-y-4">
+            <p className="text-slate-300">{accessError}</p>
+            <button type="button" onClick={() => window.location.reload()} className="px-5 py-2 rounded-xl bg-[#00c4ff] text-[#050a14] font-bold">Thử lại</button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div className="min-h-[75vh] flex items-center justify-center px-4 py-20">
         <div className="max-w-md w-full text-center space-y-6 p-8 rounded-3xl bg-[#12151c] border border-[#232834] shadow-2xl">
@@ -1186,6 +1208,7 @@ export default function AdminPage() {
             {/* ========================================================================= */}
       {/* TAB 3: QUẢN LÝ SẢN PHẨM & BẢNG GIÁ (PRODUCTS FULL CRUD) */}
       {/* ========================================================================= */}
+      {(tab === 'products' || tab === 'dashboard') && <SupplierBalances />}
       {tab === 'products' && (
         <AdminProductsView
           products={products}
@@ -1312,6 +1335,7 @@ export default function AdminPage() {
             )}
 
             <form onSubmit={handleSubmitProduct} className="space-y-4">
+              <ImageImport label="Ảnh / logo sản phẩm" value={productForm.image_url} onChange={(image_url) => setProductForm((prev) => ({ ...prev, image_url }))} />
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase font-mono">
                   Tên Sản Phẩm *
@@ -1449,18 +1473,18 @@ export default function AdminPage() {
       {/* Modal Tạo / Chỉnh Sửa Danh Mục Mới (Toàn Cục) */}
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
-          <div className="w-full max-w-lg bg-[#0c1324] border border-[#1e293b] rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5">
+          <div role="dialog" aria-modal="true" aria-label="Thông tin danh mục" className="w-full max-w-2xl max-h-[90vh] overflow-y-auto bg-[#0c1324] border border-[#1e293b] rounded-3xl p-6 sm:p-8 shadow-2xl space-y-6">
             <div className="flex items-center justify-between border-b border-[#1e293b] pb-4">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-[#00e5a0]/10 border border-[#00e5a0]/30 flex items-center justify-center text-xl">
-                  {categoryForm.icon || '📁'}
+                  {<CategoryArtwork icon={categoryForm.icon} />}
                 </div>
                 <div>
-                  <h3 className="text-base font-black text-white">
+                  <h3 className="text-xl font-bold text-white">
                     {isEditingCategory ? 'Chỉnh Sửa Danh Mục' : 'Thêm Danh Mục Mới'}
                   </h3>
                   <p className="text-[11px] text-slate-400">
-                    {isEditingCategory ? 'Cập nhật thông tin phân loại' : 'Tạo danh mục mới cho các gói sản phẩm tương lai'}
+                    {isEditingCategory ? 'Tên, biểu tượng và cách danh mục xuất hiện trên shop.' : 'Tạo nhóm sản phẩm mới để quản lý trên shop.'}
                   </p>
                 </div>
               </div>
@@ -1481,6 +1505,7 @@ export default function AdminPage() {
             )}
 
             <form onSubmit={handleSubmitCategory} className="space-y-4">
+              <ImageImport label="Ảnh / logo danh mục" value={/^https?:\/\//i.test(categoryForm.icon) ? categoryForm.icon : ""} onChange={(icon) => setCategoryForm((prev) => ({ ...prev, icon: icon || "📦" }))} />
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase font-mono">
                   Tên Danh Mục *
@@ -1539,24 +1564,25 @@ export default function AdminPage() {
 
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase font-mono">
-                  Biểu Tượng (Icon Emoji)
+                  Biểu tượng danh mục
                 </label>
                 <div className="flex items-center gap-2 mb-2">
                   <input
                     type="text"
-                    maxLength={5}
-                    value={categoryForm.icon}
+                    maxLength={32}
+                    aria-label="Biểu tượng danh mục"
+                    value={categoryIcon(categoryForm.icon)}
                     onChange={(e) => setCategoryForm({ ...categoryForm, icon: e.target.value })}
                     className="w-16 text-center text-lg bg-[#050a14] border border-[#1e293b] text-white p-2 rounded-xl outline-none focus:border-[#00e5a0]"
                   />
                   <div className="flex items-center gap-1.5 flex-wrap">
-                    {['🎮', '🤖', '🎞️', '🗂️', '⚡', '💎', '🛡️', '📦', '🔑', '🚀', '⭐', '🔥'].map((emoji) => (
+                    {['🎮', '🤖', '💬', '🎬', '☁️', '🎨', '🖱️', '📦', '🔑', '⚙️', '⭐', '🔥'].map((emoji) => (
                       <button
                         key={emoji}
                         type="button"
                         onClick={() => setCategoryForm({ ...categoryForm, icon: emoji })}
                         className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center transition-all ${
-                          categoryForm.icon === emoji
+                          categoryIcon(categoryForm.icon) === emoji
                             ? 'bg-[#00e5a0]/20 border border-[#00e5a0] scale-110'
                             : 'bg-[#050a14] border border-[#1e293b] hover:bg-white/5'
                         }`}
@@ -1588,8 +1614,9 @@ export default function AdminPage() {
                   onChange={(e) => setCategoryForm({ ...categoryForm, is_active: e.target.checked })}
                   className="w-4 h-4 rounded text-[#00e5a0] bg-[#12151c] border-[#1e293b]"
                 />
-                <span className="text-xs text-slate-300 font-medium">Kích hoạt hiển thị danh mục trên Shop</span>
+                <span className="text-sm text-slate-300 font-medium">Cho phép hiển thị trên shop</span>
               </label>
+              <p className="text-xs leading-relaxed text-slate-400">Danh mục được bật chỉ hiển thị khi có ít nhất một sản phẩm đang mở bán. Tắt danh mục sẽ ẩn nhóm này khỏi trang khách.</p>
 
               <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#1e293b]">
                 <button

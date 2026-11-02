@@ -48,6 +48,13 @@ class CheckoutController extends Controller
         }
 
         $validated['user_id'] = $authUser->id;
+        $product = \App\Models\Product::findOrFail($validated['product_id']);
+        if ($product->isDigishop() && $product->requires_customer_note && empty($validated['customer_email'])) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Vui lòng nhập email tài khoản cần nâng cấp hoặc kích hoạt.',
+            ], 422);
+        }
         if (empty($validated['customer_email']) && !empty($authUser->email) && !str_contains($authUser->email, '@dtffshop.local')) {
             $validated['customer_email'] = $authUser->email;
         }

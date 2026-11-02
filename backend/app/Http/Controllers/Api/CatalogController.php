@@ -21,6 +21,7 @@ class CatalogController extends Controller
     {
         $categories = Cache::remember('catalog.categories', 60, function () {
             return Category::where('is_active', true)
+                ->whereHas('products', fn ($q) => $q->where('is_active', true))
                 ->withCount(['products' => function ($q) {
                     $q->where('is_active', true);
                 }])
@@ -41,6 +42,7 @@ class CatalogController extends Controller
     {
         $category = Category::where('slug', $slug)
             ->where('is_active', true)
+            ->whereHas('products', fn ($q) => $q->where('is_active', true))
             ->firstOrFail();
 
         $products = Product::where('category_id', $category->id)
@@ -127,6 +129,8 @@ class CatalogController extends Controller
         ]);
 
         $catId = $categoryId ?? $product->category_id;
+        // Null preserves the other product types' existing checkout behavior.
+        $product->requires_customer_note = $product->isDigishop() ? (bool) $product->requires_customer_note : null;
         if ($catId !== 1 && ($product->category?->slug !== 'valorant')) {
             if (!empty($product->options) && is_array($product->options)) {
                 $hasInStockOption = false;

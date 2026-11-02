@@ -42,7 +42,7 @@ class DigishopResellerService
     }
 
     /** Read the reseller product catalog. This never creates a purchase. */
-    public function getProducts(int $limit = 50): array
+    public function getProducts(?int $limit = null): array
     {
         if ($this->gatewayKey === '' || $this->resellerKey === '') {
             return [];
@@ -52,9 +52,7 @@ class DigishopResellerService
             $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
                 ->withHeaders($this->headers())
                 ->timeout(20)
-                ->get("{$this->baseUrl}/reseller-get-products", [
-                    'limit' => min(50, max(1, $limit)),
-                ]);
+                ->get("{$this->baseUrl}/reseller-get-products", $limit === null ? [] : ['limit' => max(1, $limit)]);
 
             if (!$response->successful()) {
                 Log::warning('[Reseller API] Product catalog lookup failed.', [
@@ -148,13 +146,13 @@ class DigishopResellerService
      * @param string $orderRef    Mã đơn của DTFF shop (ACC-XXXXXXXX) – dùng làm memo/note
      * @return array{success: bool, order_id: string|null, delivery_content: string|null, error: string|null}
      */
-    public function createOrder(string $productId, string $orderRef): array
+    public function createOrder(string $productId, string $orderRef, ?string $customerEmail = null): array
     {
         try {
             // The API requires license_type. Resolve it from the catalog instead of
             // guessing, and fail closed if this product is missing/unavailable.
             $product = null;
-            foreach ($this->getProducts(50) as $catalogProduct) {
+            foreach ($this->getProducts() as $catalogProduct) {
                 $catalogId = (string) ($catalogProduct['id'] ?? $catalogProduct['product_id'] ?? '');
                 if ($catalogId !== '' && hash_equals($catalogId, $productId)) {
                     $product = $catalogProduct;
@@ -176,16 +174,25 @@ class DigishopResellerService
                 ];
             }
 
+            $item = [
+                'product_id' => $productId,
+                'quantity' => 1,
+                'license_type' => $licenseType,
+            ];
+            if (!empty($product['requires_customer_note'])) {
+                if (!filter_var($customerEmail, FILTER_VALIDATE_EMAIL)) {
+                    return ['success' => false, 'order_id' => null, 'delivery_content' => null,
+                        'error' => 'Thiếu email tài khoản cần nâng cấp hoặc kích hoạt.'];
+                }
+                $item['customer_note'] = trim($customerEmail);
+            }
+
             $response = Http::withOptions(['verify' => config('services.tls.ca_bundle') ?: true])
                 ->withHeaders($this->headers())
                 ->timeout(60)
                 ->post("{$this->baseUrl}/reseller-create-order", [
                     'items' => [
-                        [
-                            'product_id'   => $productId,
-                            'quantity'     => 1,
-                            'license_type' => $licenseType,
-                        ],
+                        $item,
                     ],
                     'customer_note' => $orderRef,
                 ]);

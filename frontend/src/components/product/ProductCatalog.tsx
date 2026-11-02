@@ -58,9 +58,10 @@ export function ProductCatalog({ products: initialProducts, categories: initialC
     const handleUrlSync = () => {
       if (typeof window === 'undefined') return;
       const url = new URL(window.location.href);
-      const cat = url.searchParams.get('cat') || url.searchParams.get('category');
+      const hashParams = new URLSearchParams(url.hash.split('?')[1] || '');
+      const cat = url.searchParams.get('cat') || url.searchParams.get('category') || hashParams.get('cat');
       const q = url.searchParams.get('q');
-      const hash = window.location.hash;
+      const hash = window.location.hash.split('?')[0];
 
       if (cat) {
         setSelectedCategory(cat.toLowerCase());
@@ -201,7 +202,7 @@ export function ProductCatalog({ products: initialProducts, categories: initialC
           .map((cat) => {
             const isSelected = selectedCategory === cat.slug;
             const count = categoryCounts[cat.slug] || 0;
-            const logoSrc = categoryLogoMap[cat.slug] || (cat.icon?.startsWith('/') ? cat.icon : undefined);
+            const logoSrc = (cat.icon && /^https?:\/\//i.test(cat.icon) ? cat.icon : undefined) || categoryLogoMap[cat.slug] || (cat.icon?.startsWith('/') ? cat.icon : undefined);
             return (
               <button
                 key={cat.id}

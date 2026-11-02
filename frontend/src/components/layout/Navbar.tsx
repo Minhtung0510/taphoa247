@@ -21,6 +21,18 @@ export function Navbar() {
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [productsMenuOpen, setProductsMenuOpen] = useState(true);
+  const [sellingCategories, setSellingCategories] = useState<{ slug: string; name: string; description?: string; icon?: string }[]>([]);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    fetch(`${API_BASE_URL}/categories`, { signal: controller.signal })
+      .then((res) => res.ok ? res.json() : null)
+      .then((json) => {
+        if (Array.isArray(json?.data)) setSellingCategories(json.data);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [pathname]);
 
 
   useEffect(() => {
@@ -341,7 +353,8 @@ export function Navbar() {
       {productsMenuOpen && (
         <div className="border-t border-[#1a2233] bg-[#0a0e1a]/95 backdrop-blur-md px-4 sm:px-6 lg:px-8 py-3.5 transition-all animate-in fade-in slide-in-from-top-1 duration-200 shadow-2xl">
           <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2.5">
-            {[
+            {sellingCategories.map((category) => {
+              const presentation = [
               {
                 slug: 'cursor-ai',
                 name: 'Cursor AI Pro',
@@ -405,7 +418,11 @@ export function Navbar() {
                 logo: '/logos/csgo2-logo.png',
                 color: '#f59e0b',
               },
-            ].map((cat) => (
+            ].find((entry) => entry.slug === category.slug);
+              return { slug: category.slug, name: category.name,
+                sub: presentation?.sub || category.description || 'Xem các gói đang mở bán',
+                logo: category.icon && /^https?:\/\//i.test(category.icon) ? category.icon : presentation?.logo || '/logo.png' };
+            }).map((cat) => (
               <a
                 key={cat.slug}
                 href={`/#products?cat=${cat.slug}`}

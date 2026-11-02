@@ -208,6 +208,7 @@ class OrderService
                 'product' => $product,
                 'order_code' => $order->order_code,
                 'quantity' => max(1, (int) $item->quantity),
+                'customer_email' => $order->customer_email,
                 'idempotency_key' => 'taphoa247-' . substr(hash('sha256', $order->order_code . ':item:' . $item->id), 0, 40),
             ];
         });
@@ -236,7 +237,7 @@ class OrderService
         try {
             $result = match ($provider) {
                 'cloneus' => $service->createOrder((string) $product->cloneus_product_id, (int) $claim['quantity']),
-                'digishop' => $service->createOrder((string) $product->digishop_product_id, $claim['order_code']),
+                'digishop' => $service->createOrder((string) $product->digishop_product_id, $claim['order_code'], $claim['customer_email']),
                 default => $service->createOrder(
                     (int) $product->shopmmo_product_id,
                     (int) $claim['quantity'],
@@ -340,7 +341,7 @@ class OrderService
         string                $orderRef
     ): void {
         $digishop = app(DigishopResellerService::class);
-        $result   = $digishop->createOrder($product->digishop_product_id, $orderRef);
+        $result   = $digishop->createOrder($product->digishop_product_id, $orderRef, $item->order?->customer_email);
 
         if ($result['success']) {
             $deliveryContent = $result['delivery_content'];

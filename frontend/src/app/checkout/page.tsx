@@ -110,7 +110,7 @@ function CheckoutContent() {
     }
   }, [selectedProductId, selectedProduct]);
 
-  const isCustomOrder = Boolean(
+  const isCustomOrder = selectedProduct?.requires_customer_note ?? Boolean(
     selectedProduct?.account_type?.includes('custom') ||
     selectedProduct?.badges?.includes('Đặt Hàng Riêng') ||
     selectedProduct?.name?.toLowerCase().includes('nâng cấp') ||

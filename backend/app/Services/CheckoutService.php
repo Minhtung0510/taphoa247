@@ -57,6 +57,9 @@ class CheckoutService
             }
 
             $isValorant = ($product->category_id === 1) || ($product->category?->slug === 'valorant');
+            if ($product->isDigishop() && $product->requires_customer_note && !$customerEmail) {
+                throw new InvalidArgumentException('Vui lòng nhập email tài khoản cần nâng cấp hoặc kích hoạt.');
+            }
             $unitPrice = $product->price;
             $selectedOption = null;
 
