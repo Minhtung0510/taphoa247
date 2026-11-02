@@ -26,6 +26,28 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        \Illuminate\Support\Facades\Event::listen(\Illuminate\Database\Events\ConnectionEstablished::class, function ($event): void {
+            $connection = $event->connection;
+            if ($connection->getDriverName() !== 'sqlite' || app()->runningUnitTests()) {
+                return;
+            }
+
+            try {
+                $connection->statement('PRAGMA journal_mode=WAL');
+                $connection->statement('PRAGMA synchronous=NORMAL');
+                $connection->statement('PRAGMA busy_timeout=5000');
+            } catch (\Throwable $exception) {
+                \Illuminate\Support\Facades\Log::warning('Could not configure SQLite concurrency pragmas.', [
+                    'error' => $exception->getMessage(),
+                ]);
+            }
+        });
+
+        foreach ([\App\Models\Product::class, \App\Models\Category::class] as $model) {
+            $model::saved(fn () => \App\Services\CatalogCache::invalidate());
+            $model::deleted(fn () => \App\Services\CatalogCache::invalidate());
+        }
+
         Password::defaults(function () {
             return Password::min(8);
         });

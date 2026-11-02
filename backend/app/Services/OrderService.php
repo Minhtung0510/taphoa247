@@ -84,15 +84,17 @@ class OrderService
             return false;
         }
         if ($acceptance['new_payment']) {
-            $this->sendFacebookPurchaseEvent($paidOrder);
+            \App\Jobs\SendPurchaseEvent::dispatch($paidOrder->id);
         }
 
-        $this->processPaidOrder($paidOrder->id);
+        \App\Jobs\FulfillPaidOrder::dispatch($paidOrder->id);
         return true;
     }
 
-    private function processPaidOrder(int $orderId): void
+    public function processPaidOrder(int $orderId): void
     {
+        $order = Order::find($orderId);
+        if (!$order || !$order->paid_at || !in_array($order->status, ['paid', 'processing'], true)) return;
         $items = OrderItem::with('product')->where('order_id', $orderId)->orderBy('position')->get();
         foreach ($items as $item) {
             if ($item->delivered_credentials !== null) {
@@ -113,7 +115,7 @@ class OrderService
 
         DB::transaction(function () use ($orderId) {
             $lockedOrder = Order::whereKey($orderId)->lockForUpdate()->first();
-            if (!$lockedOrder || !$lockedOrder->paid_at) {
+            if (!$lockedOrder || !$lockedOrder->paid_at || !in_array($lockedOrder->status, ['paid', 'processing'], true)) {
                 return;
             }
             $allDelivered = !$lockedOrder->items()->whereNull('delivered_credentials')->exists();
@@ -299,84 +301,6 @@ class OrderService
     }
 
     /**
-     * Fulfill một OrderItem qua ShopMMO API.
-     */
-    protected function fulfillShopMmoItem(
-        \App\Models\OrderItem $item,
-        \App\Models\Product   $product,
-        string                $orderRef
-    ): void {
-        $shopmmo  = app(ShopMmoService::class);
-        $qty      = max(1, (int) $item->quantity);
-        $idempotencyKey = 'taphoa247-' . substr(hash('sha256', $orderRef . ':item:' . $item->id), 0, 40);
-        $result   = $shopmmo->createOrder($product->shopmmo_product_id, $qty, $orderRef, $idempotencyKey);
-
-        if ($result['success']) {
-            $deliveryContent = $result['delivery_content'];
-
-            $item->shopmmo_order_id     = $result['order_id'];
-            $item->delivered_credentials = $deliveryContent ?: null;
-            if ($deliveryContent && $item->warranty_duration_hours > 0) {
-                $item->warranty_expires_at = now()->addHours($item->warranty_duration_hours);
-            }
-            $item->save();
-
-            Log::info("[ShopMMO] Item #{$item->id} fulfilled. Order={$result['order_id']}");
-        } else {
-            Log::error("[ShopMMO] Item #{$item->id} FAILED: {$result['error']}", [
-                'product_id'         => $product->id,
-                'shopmmo_product_id' => $product->shopmmo_product_id,
-                'order_ref'          => $orderRef,
-            ]);
-        }
-    }
-
-    /**
-     * Fulfill một OrderItem qua Digishop Reseller API.
-     * Gọi reseller-create-order, lưu delivery_content vào delivered_credentials.
-     */
-    protected function fulfillDigishopItem(
-        \App\Models\OrderItem $item,
-        \App\Models\Product   $product,
-        string                $orderRef
-    ): void {
-        $digishop = app(DigishopResellerService::class);
-        $result   = $digishop->createOrder($product->digishop_product_id, $orderRef, $item->order?->customer_email);
-
-        if ($result['success']) {
-            $deliveryContent = $result['delivery_content'];
-
-            // Nếu chưa có delivery_content ngay (trạng thái processing), polling tối đa 10 lần
-            if (empty($deliveryContent) && !empty($result['order_id'])) {
-                $digishopOrderId = $result['order_id'];
-                for ($i = 0; $i < 10 && empty($deliveryContent); $i++) {
-                    sleep(2);
-                    $orderInfo       = $digishop->getOrder($digishopOrderId);
-                    $deliveryContent = $orderInfo['delivery_content'] ?? null;
-                }
-            }
-
-            $item->digishop_order_id = $result['order_id'];
-            $item->digishop_status   = $result['status'] ?? 'completed';
-            // OrderItem setter tự động encrypt — không cần Crypt::encryptString thủ công
-            $item->delivered_credentials = $deliveryContent ?: null;
-            if ($deliveryContent && $item->warranty_duration_hours > 0) {
-                $item->warranty_expires_at = now()->addHours($item->warranty_duration_hours);
-            }
-            $item->save();
-
-            Log::info("[Digishop] Item #{$item->id} fulfilled. Order={$result['order_id']}");
-        } else {
-            // Lưu lỗi vào log, order sẽ ở trạng thái processing
-            Log::error("[Digishop] Item #{$item->id} FAILED: {$result['error']}", [
-                'product_id'         => $product->id,
-                'digishop_product_id'=> $product->digishop_product_id,
-                'order_ref'          => $orderRef,
-            ]);
-        }
-    }
-
-    /**
      * Tự động giải phóng các đơn hàng quá hạn 30 phút (TTL)
      */
     public function releaseExpiredOrders(): int
@@ -440,23 +364,25 @@ class OrderService
      */
     public function fulfillWaitingStockOrders(): int
     {
-        $completed = 0;
-        Order::where('status', 'processing')->orderBy('id')->chunkById(50, function ($orders) use (&$completed) {
+        $queued = 0;
+        Order::where('status', 'processing')
+            ->whereHas('items', fn ($items) => $items->whereNull('delivered_credentials')->where(function ($query) {
+                $query->whereNull('fulfillment_state')->orWhereIn('fulfillment_state', ['waiting_stock', 'processing']);
+            }))
+            ->orderBy('id')->chunkById(50, function ($orders) use (&$queued) {
             foreach ($orders as $order) {
-                $this->processPaidOrder($order->id);
-                if ($order->fresh()?->status === 'completed') {
-                    $completed++;
-                }
+                \App\Jobs\FulfillPaidOrder::dispatch($order->id);
+                $queued++;
             }
         });
 
-        return $completed;
+        return $queued;
     }
 
     /**
      * Gửi Facebook Conversions API (CAPI) deduplicated bằng event_id = order_code
      */
-    protected function sendFacebookPurchaseEvent(Order $order): void
+    public function sendFacebookPurchaseEvent(Order $order): void
     {
         $pixelId = env('FACEBOOK_PIXEL_ID');
         $accessToken = env('FACEBOOK_CAPI_TOKEN');

@@ -9,7 +9,7 @@ echo ========================================================
 echo.
 
 :: 1. Kiem tra va bat Cloudflare Tunnel
-echo [1/3] Kiem tra Cloudflare Tunnel...
+echo [1/4] Kiem tra Cloudflare Tunnel...
 sc query Cloudflared | findstr /i "RUNNING" >nul
 if %errorlevel% equ 0 goto CLOUDFLARED_OK
 echo     ... Dang khoi dong Cloudflared Service...
@@ -20,7 +20,7 @@ echo     ... Cloudflared: DA SAN SANG.
 echo.
 
 :: 2. Kiem tra va khoi dong Backend Laravel (Port 8000)
-echo [2/3] Kiem tra Backend Laravel (Port 8000)...
+echo [2/4] Kiem tra Backend Laravel (Port 8000)...
 netstat -ano | findstr ":8000" | findstr /i "LISTENING" >nul
 if %errorlevel% equ 0 goto BACKEND_RUNNING
 
@@ -35,8 +35,14 @@ echo     ... Backend Laravel: DANG HOAT DONG (Port 8000).
 :BACKEND_DONE
 echo.
 
-:: 3. Kiem tra va khoi dong Frontend Next.js (Port 3000)
-echo [3/3] Kiem tra Frontend Next.js (Port 3000)...
+:: 3. Khoi dong Laravel scheduler va queue worker (chay nen, khong can Docker)
+echo [3/4] Kiem tra Laravel scheduler va queue worker...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File "%~dp0backend\start-background-workers.ps1"
+if errorlevel 1 echo     !!! Khong khoi dong duoc worker. Xem backend\storage\logs\scheduler-worker-error.log va queue-worker-error.log
+echo.
+
+:: 4. Kiem tra va khoi dong Frontend Next.js (Port 3000)
+echo [4/4] Kiem tra Frontend Next.js (Port 3000)...
 netstat -ano | findstr ":3000" | findstr /i "LISTENING" >nul
 if %errorlevel% equ 0 goto FRONTEND_RUNNING
 

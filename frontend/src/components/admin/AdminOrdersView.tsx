@@ -8,6 +8,7 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   subtotal: number;
+  fulfillment_state?: string;
   product?: {
     id: number;
     name: string;
@@ -34,6 +35,8 @@ interface Order {
 
 interface AdminOrdersViewProps {
   orders: Order[];
+  reviewOrders: Order[];
+  reviewOrderCount: number;
   orderStatusFilter: string;
   setOrderStatusFilter: (filter: string) => void;
   orderSearch: string;
@@ -45,6 +48,8 @@ interface AdminOrdersViewProps {
 
 export function AdminOrdersView({
   orders,
+  reviewOrders,
+  reviewOrderCount,
   orderStatusFilter,
   setOrderStatusFilter,
   orderSearch,
@@ -81,6 +86,7 @@ export function AdminOrdersView({
 
   // Filter & Search
   const filteredOrders = orders.filter((o) => {
+    if (orderStatusFilter === 'needs_review' && !reviewOrders.some((reviewOrder) => reviewOrder.id === o.id)) return false;
     if (orderStatusFilter !== 'all') {
       if (orderStatusFilter === 'completed' && o.status !== 'completed' && o.status !== 'paid') return false;
       if (orderStatusFilter === 'pending' && o.status !== 'pending') return false;
@@ -262,6 +268,15 @@ export function AdminOrdersView({
           >
             Đã hủy / Từ chối ({cancelledOrders.length})
           </button>
+          <button
+            type="button"
+            onClick={() => setOrderStatusFilter('needs_review')}
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+              orderStatusFilter === 'needs_review' ? 'bg-rose-400 text-slate-950 shadow-md' : 'text-rose-300 hover:text-white'
+            }`}
+          >
+            Cần kiểm tra ({reviewOrderCount})
+          </button>
         </div>
 
         {/* Right: Search & Refresh */}
@@ -336,6 +351,7 @@ export function AdminOrdersView({
                   const isPending = o.status === 'pending';
                   const isCompleted = o.status === 'completed' || o.status === 'paid';
                   const isCancelled = o.status === 'cancelled' || o.status === 'timeout';
+                  const hasReviewItem = o.items?.some((item) => item.fulfillment_state === 'needs_review') ?? false;
 
                   return (
                     <tr
@@ -444,6 +460,7 @@ export function AdminOrdersView({
                           />
                           <span>{isCompleted ? 'ĐÃ GIAO' : isPending ? 'CHỜ DUYỆT' : isCancelled ? 'ĐÃ HỦY' : o.status}</span>
                         </span>
+                        {hasReviewItem && <div className="mt-1 text-[10px] font-bold text-rose-300">Cần admin kiểm tra kết quả giao hàng</div>}
                       </td>
 
                       {/* Column 7: Thao Tác (Chi tiết, Duyệt đơn, Từ chối) */}

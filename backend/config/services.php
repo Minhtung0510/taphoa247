@@ -7,6 +7,9 @@ return [
     'checkout' => [
         'max_pending_reserved_accounts_per_user' => env('MAX_PENDING_RESERVED_ACCOUNTS_PER_USER', 50),
     ],
+    'supplier' => [
+        'low_balance_threshold' => (int) env('SUPPLIER_LOW_BALANCE_THRESHOLD', 100000),
+    ],
 
 
     'tls' => [

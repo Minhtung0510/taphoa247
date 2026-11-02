@@ -133,7 +133,7 @@ class AuthController extends Controller
 
         Cache::put($rateKey, time() + 60, 60);
         Cache::put($emailRateKey, time() + 60, 60);
-        $user = User::where('email', $email)->whereNotNull('email_verified_at')->first();
+        $user = User::where('email', $email)->where('role', 'customer')->whereNotNull('email_verified_at')->first();
         if ($user) {
             $code = sprintf('%06d', random_int(100000, 999999));
             Cache::put('password_reset_otp_' . $email, $code, now()->addMinutes(10));
@@ -195,7 +195,7 @@ class AuthController extends Controller
         Cache::forget($otpKey);
         Cache::forget($attemptsKey);
 
-        $user = User::where('email', $email)->whereNotNull('email_verified_at')->first();
+        $user = User::where('email', $email)->where('role', 'customer')->whereNotNull('email_verified_at')->first();
         if (!$user) {
             return response()->json(['success' => false, 'message' => 'Không thể đặt lại mật khẩu cho tài khoản này.'], 422);
         }

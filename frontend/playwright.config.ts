@@ -8,7 +8,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     viewport: { width: 1280, height: 720 },
   },
@@ -19,8 +19,8 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run start',
-    port: 3000,
+    command: process.env.PLAYWRIGHT_WEB_SERVER_COMMAND || 'npm run start',
+    port: Number(new URL(process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000').port) || 3000,
     reuseExistingServer: true,
     timeout: 60000,
   },

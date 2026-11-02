@@ -72,7 +72,9 @@ class DefaultSecretAndTestPaySecurityTest extends TestCase
 
     public function test_preflight_fails_when_device_secret_is_default_or_weak(): void
     {
-        putenv('DEVICE_GATEWAY_SECRET=DTFF_SECRET_TEST_2026');
+        // The app reads env values into config during bootstrap; set the config
+        // directly so this assertion is isolated from the developer's .env.
+        config(['services.device_gateway.secret' => 'DTFF_SECRET_TEST_2026']);
 
         $exitCode = Artisan::call('app:preflight');
         $output = Artisan::output();

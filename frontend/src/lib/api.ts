@@ -8,7 +8,7 @@ export const API_BASE_URL =
 export async function fetchCategories(): Promise<Category[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/categories`, {
-      next: { revalidate: 60 },
+      next: { revalidate: 10 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -24,7 +24,7 @@ export async function fetchCategoryWithProducts(slug: string): Promise<{
 } | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/categories/${slug}`, {
-      next: { revalidate: 60 },
+      next: { revalidate: 10 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -37,7 +37,7 @@ export async function fetchCategoryWithProducts(slug: string): Promise<{
 export async function fetchProducts(): Promise<Product[]> {
   try {
     const res = await fetch(`${API_BASE_URL}/products`, {
-      next: { revalidate: 60 },
+      next: { revalidate: 10 },
     });
     if (!res.ok) return [];
     const json = await res.json();
@@ -50,7 +50,7 @@ export async function fetchProducts(): Promise<Product[]> {
 export async function fetchProduct(slug: string): Promise<Product | null> {
   try {
     const res = await fetch(`${API_BASE_URL}/products/${slug}`, {
-      next: { revalidate: 60 },
+      next: { revalidate: 10 },
     });
     if (!res.ok) return null;
     const json = await res.json();

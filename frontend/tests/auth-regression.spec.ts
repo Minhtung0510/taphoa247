@@ -79,13 +79,15 @@ test('admin user directory searches and opens details', async ({ page }) => {
   await page.route('**/admin/users?*', route => route.fulfill({ json: { success: true, data: { data: [{ ...user, created_at: '2026-11-01T00:00:00Z', email_verified_at: null, discord_id: '123456789', orders_count: 3 }], total: 1, current_page: 1, last_page: 1 } } }));
   await page.goto('/admin');
   await page.getByRole('button', { name: /Quản Lý Người Dùng/ }).click();
-  await expect(page.getByRole('heading', { name: 'Quản lý người dùng' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Khách hàng & người dùng' })).toBeVisible();
   await page.getByLabel('Tìm người dùng').fill('Auth');
   const request = page.waitForRequest(r => r.url().includes('/admin/users?search=Auth'));
-  await page.getByRole('button', { name: 'Tìm kiếm', exact: true }).click();
+  await page.getByRole('button', { name: 'Lọc', exact: true }).click();
   await request;
   await page.getByRole('button', { name: 'Chi tiết', exact: true }).click();
-  await expect(page.getByText('Discord ID: 123456789')).toBeVisible();
+  const accountDetails = page.getByRole('dialog', { name: /Thông tin tài khoản/ });
+  await expect(accountDetails.getByText('Discord ID', { exact: true })).toBeVisible();
+  await expect(accountDetails.getByText('123456789', { exact: true })).toBeVisible();
 });
 
 test('admin can submit create, edit and confirmed delete forms', async ({ page }) => {
@@ -97,15 +99,15 @@ test('admin can submit create, edit and confirmed delete forms', async ({ page }
   await page.route(/\/admin\/users(?:\/\d+)?$/, r => { methods.push(r.request().method()); return r.fulfill({ json: { success: true } }); });
   await page.goto('/admin');
   await page.getByRole('button', { name: /Quản Lý Người Dùng/ }).click();
-  await page.getByRole('button', { name: 'Thêm người dùng', exact: true }).click();
+  await page.getByRole('button', { name: /Thêm người dùng/ }).click();
   await page.getByLabel('Tên', { exact: true }).fill('New Customer');
   await page.getByLabel('Email', { exact: true }).fill('new@example.test');
   await page.getByLabel('Mật khẩu mới').fill('test-password');
-  await page.getByRole('button', { name: 'Lưu người dùng' }).click();
+  await page.getByRole('button', { name: 'Lưu tài khoản' }).click();
   await expect(page.getByText('Đã lưu người dùng.')).toBeVisible();
   await page.getByRole('button', { name: 'Sửa', exact: true }).click();
   await page.getByLabel('Tên', { exact: true }).fill('Updated Customer');
-  await page.getByRole('button', { name: 'Lưu người dùng' }).click();
+  await page.getByRole('button', { name: 'Lưu tài khoản' }).click();
   await expect(page.getByText('Đã lưu người dùng.')).toBeVisible();
   page.once('dialog', dialog => dialog.accept());
   await page.getByRole('button', { name: 'Xóa', exact: true }).click();

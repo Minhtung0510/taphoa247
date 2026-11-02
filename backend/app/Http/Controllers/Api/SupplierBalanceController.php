@@ -31,6 +31,6 @@ class SupplierBalanceController extends Controller
             }
             return ['sources' => $balances, 'checked_at' => now()->toIso8601String()];
         });
-        return response()->json(['success' => true, 'data' => $data]);
+        return response()->json(['success' => true, 'data' => $data, 'low_balance_threshold' => (int) config('services.supplier.low_balance_threshold', 100000)]);
     }
 }

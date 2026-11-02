@@ -19,7 +19,7 @@ class CatalogController extends Controller
      */
     public function categories(): JsonResponse
     {
-        $categories = Cache::remember('catalog.categories', 60, function () {
+        $categories = Cache::remember('catalog.categories', 10, function () {
             return Category::where('is_active', true)
                 ->whereHas('products', fn ($q) => $q->where('is_active', true))
                 ->withCount(['products' => function ($q) {
@@ -68,7 +68,7 @@ class CatalogController extends Controller
      */
     public function products(Request $request): JsonResponse
     {
-        $cacheKey = 'catalog.products.' . md5(serialize($request->all()));
+        $cacheKey = 'catalog.products.' . \App\Services\CatalogCache::version() . '.' . md5(serialize($request->all()));
         $products = Cache::remember($cacheKey, 20, function () use ($request) {
             $query = Product::where('is_active', true)
                 ->with('category:id,name,slug,icon')

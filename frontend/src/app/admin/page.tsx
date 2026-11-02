@@ -18,6 +18,7 @@ import { AdminWarrantyView } from '@/components/admin/AdminWarrantyView';
 import { AdminCouponsView } from '@/components/admin/AdminCouponsView';
 import { AdminUsersView } from '@/components/admin/AdminUsersView';
 import { AdminSettingsView } from '@/components/admin/AdminSettingsView';
+import { AdminAuditView } from '@/components/admin/AdminAuditView';
 
 export default function AdminPage() {
   const { user, token, logout } = useAuth();
@@ -62,6 +63,7 @@ export default function AdminPage() {
             if (j.data.categories) setCategories(j.data.categories);
             if (j.data.products) setProducts(j.data.products);
             if (j.data.orders) setOrders(j.data.orders);
+            if (typeof j.data.needs_review_count === 'number') setReviewOrderCount(j.data.needs_review_count);
             if (j.data.revenue) setRevenueData(j.data.revenue);
             if (j.data.settings) setSettingsData(j.data.settings);
             if (j.data.warranty) setClaims(j.data.warranty);
@@ -109,12 +111,14 @@ export default function AdminPage() {
     return null;
   }, [token]);
 
-  const [tab, setTab] = useState<'dashboard' | 'revenue' | 'products' | 'stock' | 'orders' | 'warranty' | 'settings' | 'coupons' | 'users'>('dashboard');
+  const [tab, setTab] = useState<'dashboard' | 'revenue' | 'products' | 'stock' | 'orders' | 'warranty' | 'settings' | 'coupons' | 'users' | 'audit'>('dashboard');
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [revenueData, setRevenueData] = useState<any>(null);
   const [products, setProducts] = useState<any[]>([]);
   const [categories, setCategories] = useState<any[]>([]);
   const [orders, setOrders] = useState<any[]>([]);
+  const [reviewOrders, setReviewOrders] = useState<any[]>([]);
+  const [reviewOrderCount, setReviewOrderCount] = useState(0);
   const [claims, setClaims] = useState<any[]>([]);
   const [coupons, setCoupons] = useState<any[]>([]);
 
@@ -141,7 +145,7 @@ export default function AdminPage() {
   const [valorantSubFilter, setValorantSubFilter] = useState<'all' | 'normal' | 'off'>('all');
   const [splitValorantTypes, setSplitValorantTypes] = useState(false);
   const [orderSearch, setOrderSearch] = useState('');
-  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | 'completed' | 'pending' | 'timeout'>('all');
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | 'completed' | 'pending' | 'timeout' | 'cancelled' | 'needs_review'>('all');
 
   // Modal Thêm / Sửa Sản Phẩm
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
@@ -238,6 +242,7 @@ export default function AdminPage() {
           if (j.data.categories) setCategories(j.data.categories);
           if (j.data.products) setProducts(j.data.products);
           if (j.data.orders) setOrders(j.data.orders);
+          if (typeof j.data.needs_review_count === 'number') setReviewOrderCount(j.data.needs_review_count);
           if (j.data.revenue) setRevenueData(j.data.revenue);
           if (j.data.settings) setSettingsData(j.data.settings);
           if (j.data.warranty) setClaims(j.data.warranty);
@@ -245,6 +250,24 @@ export default function AdminPage() {
         }
       })
       .catch(() => { });
+  };
+
+  const setAdminOrderFilter = async (filter: string) => {
+    setOrderStatusFilter(filter as any);
+    if (filter !== 'needs_review') return;
+    const t = activeToken;
+    if (!t) return;
+    try {
+      const res = await fetch(`${API_BASE_URL}/admin/orders?status=needs_review`, {
+        headers: { Accept: 'application/json', Authorization: `Bearer ${t}` },
+      });
+      if (!res.ok) throw new Error('Không tải được danh sách cần kiểm tra.');
+      const json = await res.json();
+      setReviewOrders(json.data?.data || []);
+      setReviewOrderCount(Number(json.needs_review_count || 0));
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   // ─── CRUD MÃ GIẢM GIÁ (COUPONS) ───
@@ -1249,9 +1272,11 @@ export default function AdminPage() {
       {/* ========================================================================= */}
       {tab === 'orders' && (
         <AdminOrdersView
-          orders={orders}
+          orders={orderStatusFilter === 'needs_review' ? reviewOrders : orders}
+          reviewOrders={reviewOrders}
+          reviewOrderCount={reviewOrderCount}
           orderStatusFilter={orderStatusFilter}
-          setOrderStatusFilter={(f) => setOrderStatusFilter(f as any)}
+          setOrderStatusFilter={setAdminOrderFilter}
           orderSearch={orderSearch}
           setOrderSearch={setOrderSearch}
           onForceComplete={handleForceComplete}
@@ -1276,6 +1301,7 @@ export default function AdminPage() {
       {/* TAB 7: CẤU HÌNH CỬA HÀNG (SETTINGS) */}
       {/* ========================================================================= */}
       {tab === 'users' && <AdminUsersView token={activeToken} />}
+      {tab === 'audit' && <AdminAuditView token={activeToken} />}
 
       {tab === 'settings' && (
         <AdminSettingsView

@@ -354,7 +354,7 @@ export function ProductCard({ product, categorySlug, isCheckoutPreview }: Produc
           </div>
 
           {/* Tiêu đề sản phẩm */}
-          <Link href={detailUrl} className="block group/link">
+          <Link href={detailUrl} prefetch={false} className="block group/link">
             <h3 className="text-[17px] sm:text-[18px] font-bold text-[#eef1f7] leading-snug mb-2 group-hover/link:text-[#3ddc97] transition-colors line-clamp-2">
               {product.name}
             </h3>

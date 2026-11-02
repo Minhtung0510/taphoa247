@@ -184,6 +184,7 @@ class AdminController extends Controller
                 'categories' => $categories,
                 'products' => $products,
                 'orders' => $orders,
+                'needs_review_count' => Order::whereHas('items', fn ($items) => $items->where('fulfillment_state', 'needs_review'))->count(),
                 'revenue' => $revenue,
                 'settings' => $settings,
                 'warranty' => $warranty,
@@ -555,7 +556,7 @@ class AdminController extends Controller
 
         return response()->json([
             'success' => true,
-            'message' => "Đã nạp thành công {$imported} tài khoản vào kho ({$duplicates} acc bị trùng lặp bỏ qua). Tự động giao {$fulfilledWaiting} đơn đang chờ hàng.",
+            'message' => "Đã nạp thành công {$imported} tài khoản vào kho ({$duplicates} acc bị trùng lặp bỏ qua). Đã đưa {$fulfilledWaiting} đơn chờ kho vào hàng đợi xử lý.",
             'data' => [
                 'imported_count' => $imported,
                 'duplicates_count' => $duplicates,
@@ -572,7 +573,11 @@ class AdminController extends Controller
         $query = Order::with('items.product')->latest();
 
         if ($request->filled('status')) {
-            $query->where('status', $request->status);
+            if ($request->status === 'needs_review') {
+                $query->whereHas('items', fn ($items) => $items->where('fulfillment_state', 'needs_review'));
+            } else {
+                $query->where('status', $request->status);
+            }
         }
 
         if ($request->filled('search')) {
@@ -587,7 +592,17 @@ class AdminController extends Controller
 
         $orders = $query->paginate(20);
 
-        return response()->json(['success' => true, 'data' => $orders]);
+        return response()->json([
+            'success' => true,
+            'data' => $orders,
+            'needs_review_count' => Order::whereHas('items', fn ($items) => $items->where('fulfillment_state', 'needs_review'))->count(),
+        ]);
+    }
+
+    public function auditLogs(): JsonResponse
+    {
+        $logs = \App\Models\AuditLog::with('user:id,name,email')->latest()->paginate(30);
+        return response()->json(['success' => true, 'data' => $logs]);
     }
 
     /**

@@ -59,7 +59,7 @@ Route::prefix('v1')->group(function () {
         Route::get('/user/orders', [AuthController::class, 'userOrders']);
 
         // 6. Admin Management API
-        Route::prefix('admin')->middleware(EnsureAdmin::class)->group(function () {
+        Route::prefix('admin')->middleware([EnsureAdmin::class, \App\Http\Middleware\RecordAdminAction::class])->group(function () {
             Route::post('/users', [AdminController::class, 'createUser']);
             Route::put('/users/{user}', [AdminController::class, 'updateUser']);
             Route::delete('/users/{user}', [AdminController::class, 'deleteUser']);
@@ -80,6 +80,7 @@ Route::prefix('v1')->group(function () {
             Route::put('/products/{id}/price', [AdminController::class, 'updatePrice']);
             Route::post('/stock/import', [AdminController::class, 'importStock']);
             Route::get('/orders', [AdminController::class, 'orders']);
+            Route::get('/audit-logs', [AdminController::class, 'auditLogs']);
             Route::post('/orders/{code}/force-complete', [AdminController::class, 'forceCompleteOrder']);
             Route::post('/orders/{code}/reject', [AdminController::class, 'rejectOrder']);
             Route::get('/warranty', [AdminController::class, 'warrantyClaims']);

@@ -9,7 +9,7 @@ use Illuminate\Console\Command;
 
 class PollPaymentsCommand extends Command
 {
-    protected $signature = 'payments:poll';
+    protected $signature = 'payments:poll {--maintenance-only : Release expired orders and enqueue paid fulfillment only}';
     protected $description = 'Kiểm tra biến động số dư ngân hàng qua SePay / Web2M để tự động giao acc cho các đơn hàng';
 
     public function handle(PaymentGatewayInterface $gateway, OrderService $orderService): int
@@ -23,8 +23,10 @@ class PollPaymentsCommand extends Command
         // 2. Tự động kiểm tra đơn hàng đang chờ kho
         $waitingFulfilled = $orderService->fulfillWaitingStockOrders();
         if ($waitingFulfilled > 0) {
-            $this->info("Đã hoàn tất {$waitingFulfilled} đơn hàng chờ nạp kho.");
+            $this->info("Đã đưa {$waitingFulfilled} đơn hàng cần giao tiếp vào hàng đợi xử lý.");
         }
+
+        if ($this->option('maintenance-only')) return self::SUCCESS;
 
         // 3. Find active orders and recently expired orders that may have a late bank transfer.
         $latePaymentCutoff = now()->subMinutes(max(0, (int) config('services.payments.late_payment_grace_minutes', 1440)));
